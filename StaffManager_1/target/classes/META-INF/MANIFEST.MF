@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Build-Jdk-Spec: 24
+Main-Class: com.example.swingapp.Main
+Created-By: Maven Integration for Eclipse
+
