@@ -95,7 +95,7 @@ public class EmployeeFormPanel extends JPanel {
 		gbc.gridy = row;
 
 		gbc.gridx = 0; gbc.weightx = 0;
-		form.add(label("Ngày sinh:"), gbc);
+		form.add(label("Ngày sinh (dd/mm/YYYY):"), gbc);
 		txtDOB = field("01/01/1990", true);
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		form.add(txtDOB, gbc);
@@ -244,6 +244,25 @@ public class EmployeeFormPanel extends JPanel {
 	}
 
 	public void handleSave(ActionEvent e) {
+		var dobText = txtDOB.getText().trim();
+		Date dob = null;
+		try {
+			dob = new SimpleDateFormat("dd/MM/yyyy").parse(dobText);
+
+			var today = new Date();
+			if (dob.after(today)) {
+				throw new Exception("Ngày sinh không được lớn hơn hôm nay.");
+			}
+		} catch (Exception ex) {
+			javax.swing.JOptionPane.showMessageDialog(
+					this,
+					"Ngày sinh không hợp lệ! Vui lòng nhập đúng định dạng dd/MM/yyyy.",
+					"Lỗi nhập liệu",
+					javax.swing.JOptionPane.ERROR_MESSAGE
+					);
+			txtDOB.requestFocus();
+			return;
+		}
 		var emp = new Employee();
 		emp.setName(txtName.getText());
 		emp.setPhone(txtPhone.getText());

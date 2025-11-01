@@ -48,7 +48,7 @@ public class ContractAdminPanel extends JPanel {
 
 	public ContractAdminPanel() {
 		setBackground(BG_LIGHT);
-		setLayout(new BorderLayout(0, 20));
+		setLayout(new BorderLayout(0, 15));
 		initComponents();
 	}
 
@@ -62,13 +62,14 @@ public class ContractAdminPanel extends JPanel {
 		add(searchPanel, BorderLayout.NORTH);
 
 		txtSearch = styledField("Tìm kiếm theo tên nhân viên hoặc vị trí...", 400);
+		txtSearch.setColumns(30);
 		searchPanel.add(txtSearch);
 
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110, 36);
 		btnSearch.addActionListener(e -> search());
 		searchPanel.add(btnSearch);
 
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 130, 36);
+		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110, 36);
 		btnAdd.addActionListener(e -> addNew());
 		searchPanel.add(btnAdd);
 
@@ -104,12 +105,12 @@ public class ContractAdminPanel extends JPanel {
 		var card = new JPanel();
 		card.setLayout(new BorderLayout());
 		card.setBackground(CARD_WHITE);
-		card.setBorder(new EmptyBorder(20, 25, 20, 25));
+		card.setBorder(new EmptyBorder(15, 15, 15, 15));
 
 		var header = new JLabel("DANH SÁCH HỢP ĐỒNG LAO ĐỘNG");
-		header.setFont(new Font("Segoe UI", Font.BOLD, 16));
+		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
-		header.setBorder(new EmptyBorder(0, 0, 12, 0));
+		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 		card.add(header, BorderLayout.NORTH);
 
 		String[] cols = { "Contract ID", "Employee Name", "Start Date", "End Date", "Role", "Salary", "Contract Status", "Restaurant Name" };

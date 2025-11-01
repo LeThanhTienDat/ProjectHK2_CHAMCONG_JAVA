@@ -65,18 +65,22 @@ public class EmployeeAdminPanel extends JPanel {
 	public EmployeeAdminPanel(java.awt.event.ActionListener saveListener, java.awt.event.ActionListener cancelListener) {
 		setLayout(new BorderLayout(0, 15));
 		setBackground(BG_LIGHT);
-		setBorder(new EmptyBorder(15, 15, 15, 15));
 
 		// ===== Search Panel =====
-		var searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+		var searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
 		searchPanel.setBackground(CARD_WHITE);
 		searchPanel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
-		searchPanel.setPreferredSize(new Dimension(0, 60));
+		searchPanel.setPreferredSize(new Dimension(0, 70));
 
 		txtSearch = new JTextField("Tìm kiếm nhân viên...");
 		txtSearch.setColumns(30);
 		txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-		txtSearch.setForeground(Color.GRAY);
+		txtSearch.setForeground(TEXT_PRIMARY);
+		txtSearch.setBackground(new Color(248, 250, 252));
+		txtSearch.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+				new EmptyBorder(8, 12, 8, 12)));
+		txtSearch.setPreferredSize(new Dimension(400, 36));
 		txtSearch.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent e) {
@@ -98,13 +102,14 @@ public class EmployeeAdminPanel extends JPanel {
 		resFilter.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		resFilter.setBackground(new Color(248, 250, 252));
 		resFilter.addActionListener(e -> onRestaurantSelected());
+		resFilter.setPreferredSize(new Dimension(200, 36));
 		resFilter.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
 				new EmptyBorder(8, 12, 8, 12)));
 		renderRestaurant();
 
-		btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 130);
+		btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
+		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
 
 		btnSearch.addActionListener(e -> searchEmployee());
 		btnAdd.addActionListener(e -> addEmployee());
@@ -129,7 +134,7 @@ public class EmployeeAdminPanel extends JPanel {
 		// Table card
 		tableCard = new JPanel(new BorderLayout());
 		tableCard.setBackground(CARD_WHITE);
-		tableCard.setBorder(new EmptyBorder(20, 25, 20, 25));
+		tableCard.setBorder(new EmptyBorder(15, 15, 15, 15));
 
 		var header = new JLabel("DANH SÁCH NHÂN VIÊN");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -248,7 +253,7 @@ public class EmployeeAdminPanel extends JPanel {
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		b.setForeground(Color.WHITE);
 		b.setBackground(color);
-		b.setPreferredSize(new Dimension(width, 38));
+		b.setPreferredSize(new Dimension(width, 36));
 		b.setBorderPainted(false);
 		b.setFocusPainted(false);
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -282,20 +287,17 @@ public class EmployeeAdminPanel extends JPanel {
 
 				var cell = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-				// Căn giữa
 				cell.setHorizontalAlignment(SwingConstants.CENTER);
 
 				if (!isSelected) {
-					// Màu nền mặc định
 					cell.setBackground(Color.WHITE);
 					cell.setForeground(Color.BLACK);
 
-					// Check trạng thái hợp đồng
-					var statusObj = table.getValueAt(row, 7); // cột 7 = contract_status
+					var statusObj = table.getValueAt(row, 7);
 					var status = (statusObj != null) ? statusObj.toString() : "";
 
 					if ("Expired".equalsIgnoreCase(status)) {
-						cell.setBackground(new Color(255, 153, 153)); // đỏ nhạt
+						cell.setBackground(new Color(255, 153, 153));
 						cell.setForeground(Color.BLACK);
 					}
 				}
@@ -357,10 +359,8 @@ public class EmployeeAdminPanel extends JPanel {
 				lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
 				lbl.setOpaque(true);
 
-				// ✅ Chặn null hoàn toàn
 				var text = (value != null) ? value.toString() : "";
 
-				// Thêm icon sắp xếp ▲▼
 				RowSorter<? extends TableModel> sorter = table.getRowSorter();
 				if (sorter != null && !sorter.getSortKeys().isEmpty()) {
 					RowSorter.SortKey sortKey = sorter.getSortKeys().get(0);
@@ -368,7 +368,7 @@ public class EmployeeAdminPanel extends JPanel {
 						switch (sortKey.getSortOrder()) {
 						case ASCENDING -> text += " ▲";
 						case DESCENDING -> text += " ▼";
-						default -> {} // không thêm gì
+						default -> {}
 						}
 					}
 				}

@@ -2,13 +2,12 @@ package Admin;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -54,7 +53,7 @@ public class RestaurantAdminPanel extends JPanel {
 
 	public RestaurantAdminPanel(java.awt.event.ActionListener saveListener, java.awt.event.ActionListener cancelListener) {
 		setBackground(BG_LIGHT);
-		setLayout(new BorderLayout(0, 20));
+		setLayout(new BorderLayout(0, 15));
 
 		// =============== SEARCH PANEL ===============
 		var searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
@@ -63,29 +62,19 @@ public class RestaurantAdminPanel extends JPanel {
 		searchPanel.setPreferredSize(new Dimension(0, 70));
 
 		txtSearch = new JTextField("Tìm kiếm nhà hàng...");
+		txtSearch.setPreferredSize(new Dimension(400, 36));
 		txtSearch.setColumns(30);
+		txtSearch.setBackground(new Color(248, 250, 252));
 		txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-		txtSearch.setForeground(Color.GRAY);
-		txtSearch.addFocusListener(new FocusAdapter() {
-			@Override
-			public void focusGained(FocusEvent e) {
-				if (txtSearch.getText().equals("Tìm kiếm nhà hàng...")) {
-					txtSearch.setText("");
-					txtSearch.setForeground(TEXT_PRIMARY);
-				}
-			}
+		txtSearch.setForeground(TEXT_PRIMARY);
+		txtSearch.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+				new EmptyBorder(8, 12, 8, 12)
+				));
+		txtSearch.setOpaque(true);
 
-			@Override
-			public void focusLost(FocusEvent e) {
-				if (txtSearch.getText().isEmpty()) {
-					txtSearch.setText("Tìm kiếm nhà hàng...");
-					txtSearch.setForeground(Color.GRAY);
-				}
-			}
-		});
-
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 130);
+		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
+		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
 		btnSearch.addActionListener(e -> searchRestaurant());
 		btnAdd.addActionListener(e -> addRestaurant());
 
@@ -104,7 +93,7 @@ public class RestaurantAdminPanel extends JPanel {
 
 		tableCard = new JPanel(new BorderLayout());
 		tableCard.setBackground(CARD_WHITE);
-		tableCard.setBorder(new EmptyBorder(20, 25, 20, 25));
+		tableCard.setBorder(new EmptyBorder(15, 15, 15, 15));
 
 		var header = new JLabel("DANH SÁCH NHÀ HÀNG", SwingConstants.LEFT);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -197,7 +186,7 @@ public class RestaurantAdminPanel extends JPanel {
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		b.setForeground(Color.WHITE);
 		b.setBackground(color);
-		b.setPreferredSize(new Dimension(width, 38));
+		b.setPreferredSize(new Dimension(width, 36));
 		b.setBorderPainted(false);
 		b.setFocusPainted(false);
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -211,13 +200,25 @@ public class RestaurantAdminPanel extends JPanel {
 		header.setReorderingAllowed(false);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-		// Renderer cho header
-		var headerRenderer = new DefaultTableCellRenderer();
-		headerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-		headerRenderer.setForeground(Color.WHITE);
-		headerRenderer.setBackground(PRIMARY_BLUE);
-		headerRenderer.setFont(new Font("Segoe UI", Font.BOLD, 13));
-		headerRenderer.setOpaque(true);
+		DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
+			@Override
+			public Component getTableCellRendererComponent(
+					JTable table, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
+
+				var lbl = (JLabel) super.getTableCellRendererComponent(
+						table, value, isSelected, hasFocus, row, column);
+
+				lbl.setHorizontalAlignment(SwingConstants.CENTER);
+				lbl.setForeground(Color.WHITE);
+				lbl.setBackground(PRIMARY_BLUE);
+				lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+				lbl.setOpaque(true);
+				lbl.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
+
+				return lbl;
+			}
+		};
 		for (var i = 0; i < t.getColumnCount(); i++) {
 			t.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
 		}
@@ -229,6 +230,8 @@ public class RestaurantAdminPanel extends JPanel {
 		t.setGridColor(new Color(220, 220, 220));
 		t.setShowVerticalLines(true);
 		t.setShowHorizontalLines(true);
+		t.getTableHeader().setPreferredSize(new Dimension(0, 45));
+		t.getTableHeader().setReorderingAllowed(false);
 
 		var center = new DefaultTableCellRenderer();
 		center.setHorizontalAlignment(SwingConstants.CENTER);

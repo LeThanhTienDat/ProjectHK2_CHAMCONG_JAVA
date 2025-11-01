@@ -46,7 +46,7 @@ public class AttendanceAdminPanel extends JPanel {
 
 	public AttendanceAdminPanel() {
 		setBackground(BG_LIGHT);
-		setLayout(new BorderLayout(0, 20));
+		setLayout(new BorderLayout(0, 15));
 		initComponents();
 	}
 
@@ -61,9 +61,10 @@ public class AttendanceAdminPanel extends JPanel {
 	private JPanel createSearchPanel() {
 
 		var p = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
-		p.setOpaque(false);
-		p.setPreferredSize(new Dimension(0, 70));
+		p.setOpaque(true);
 		p.setBackground(CARD_WHITE);
+		p.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+		p.setPreferredSize(new Dimension(0, 70));
 
 		var restaurantNameSql = "{CALL SP_GetRestaurantName}";
 		try (var conn = DBConnection.getConnection();
@@ -91,16 +92,17 @@ public class AttendanceAdminPanel extends JPanel {
 			cmbRestaurantList.setPreferredSize(new Dimension(140, 36));
 			//			cmbRestaurantList.addActionListener(e -> updateTableHeaderAndData());
 
-			txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 300);
-			var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
+			txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 400);
+			txtSearch.setColumns(30);
+			var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
 			btnSearch.addActionListener(e -> performSearch());
 
+			p.add(txtSearch);
 			p.add(new JLabel("Tháng/Năm: "));
 			p.add(cmbMonthYear);
 			p.add(new JLabel("Thuộc nhà hàng: "));
 			p.add(cmbRestaurantList);
 			p.add(Box.createHorizontalStrut(10));
-			p.add(txtSearch);
 			p.add(btnSearch);
 			return p;
 
@@ -146,7 +148,7 @@ public class AttendanceAdminPanel extends JPanel {
 
 	private JPanel createTableCard() {
 		var card = new JPanel(new BorderLayout());
-		card.setBorder(new EmptyBorder(20, 25, 20, 25));
+		card.setBorder(new EmptyBorder(15, 15, 15, 15));
 		card.setOpaque(false);
 
 		// tạo panel headerVertical chứa header text + legend (stacked)

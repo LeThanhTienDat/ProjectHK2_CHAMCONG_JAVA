@@ -10,7 +10,6 @@ import java.awt.event.ActionEvent;
 import java.text.MessageFormat;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -47,7 +46,7 @@ public class OvertimeAdminPanel extends JPanel {
 
 	public OvertimeAdminPanel() {
 		setBackground(BG_LIGHT);
-		setLayout(new BorderLayout(0, 20));
+		setLayout(new BorderLayout(0, 15));
 
 		add(createSearchPanel(), BorderLayout.NORTH);
 
@@ -84,15 +83,14 @@ public class OvertimeAdminPanel extends JPanel {
 		p.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1, true));
 
 		txtSearch = styledField("Tìm kiếm loại OT...", 400);
+		txtSearch.setColumns(30);
 		p.add(txtSearch);
 
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110, 36);
 		btnSearch.addActionListener(e -> search());
 		p.add(btnSearch);
 
-		p.add(Box.createHorizontalStrut(200));
-
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 130, 36);
+		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110, 36);
 		btnAdd.addActionListener(e -> addNew());
 		p.add(btnAdd);
 		return p;
@@ -101,12 +99,12 @@ public class OvertimeAdminPanel extends JPanel {
 	private JPanel createTableCard() {
 		var card = new JPanel(new BorderLayout());
 		card.setBackground(CARD_WHITE);
-		card.setBorder(new EmptyBorder(20, 25, 20, 25));
+		card.setBorder(new EmptyBorder(15, 15, 15, 15));
 
 		var header = new JLabel("DANH SÁCH TĂNG CA");
-		header.setFont(new Font("Segoe UI", Font.BOLD, 16));
+		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
-		header.setBorder(new EmptyBorder(0, 0, 12, 0));
+		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 
 		String[] cols = { "ID", "Tên Loại OT", "Giờ Bắt Đầu", "Giờ Kết Thúc", "rawId" };
 		model = new DefaultTableModel(cols, 0);
@@ -165,20 +163,23 @@ public class OvertimeAdminPanel extends JPanel {
 
 	private void styleTable(JTable t) {
 		var h = t.getTableHeader();
-		h.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		h.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		h.setBackground(PRIMARY_BLUE);
 		h.setForeground(Color.WHITE);
-		h.setPreferredSize(new Dimension(0, 40));
+		h.setOpaque(true);
+		h.setPreferredSize(new Dimension(0, 45));
 		DefaultTableCellRenderer hr = new DefaultTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
 					boolean hasFocus, int row, int col) {
-				super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
-				setBackground(PRIMARY_BLUE);
-				setForeground(Color.WHITE);
-				setFont(new Font("Segoe UI", Font.BOLD, 13));
-				setHorizontalAlignment(JLabel.CENTER);
-				return this;
+
+				var lbl = (JLabel) super.getTableCellRendererComponent(table, value, false, false, row, col);
+				lbl.setBackground(PRIMARY_BLUE);
+				lbl.setForeground(Color.WHITE);
+				lbl.setFont(table.getTableHeader().getFont().deriveFont(Font.BOLD, 13f)); // ✅ ép font đậm thật sự
+				lbl.setHorizontalAlignment(SwingConstants.CENTER);
+				lbl.setOpaque(true);
+				return lbl;
 			}
 		};
 		for (var i = 0; i < t.getColumnCount(); i++) {

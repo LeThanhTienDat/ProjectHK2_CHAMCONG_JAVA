@@ -2,6 +2,7 @@ package Admin;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -9,7 +10,6 @@ import java.awt.event.ActionEvent;
 import java.text.MessageFormat;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -52,22 +52,28 @@ public class ShiftAdminPanel extends JPanel {
 		// ==== TOP SEARCH PANEL ====
 		var searchPanel = new JPanel();
 		searchPanel.setBackground(CARD_WHITE);
-		searchPanel.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
-				new EmptyBorder(10, 15, 10, 15)));
-		searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 10));
+		searchPanel.setPreferredSize(new Dimension(0, 70));
+		searchPanel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+		searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
 
 		txtSearch = new JTextField("Tìm kiếm ca làm...");
 		txtSearch.setPreferredSize(new Dimension(400, 36));
+		txtSearch.setColumns(30);
+
+		txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		txtSearch.setForeground(TEXT_PRIMARY);
+		txtSearch.setBackground(new Color(248, 250, 252));
+		txtSearch.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+				new EmptyBorder(8, 12, 8, 12)));
 		searchPanel.add(txtSearch);
 
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110, 36);
 		btnSearch.addActionListener(e -> search());
 		searchPanel.add(btnSearch);
 
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 130, 36);
+		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110, 36);
 		btnAdd.addActionListener(e -> addNew());
-		searchPanel.add(Box.createHorizontalStrut(150));
 		searchPanel.add(btnAdd);
 
 		add(searchPanel, BorderLayout.NORTH);
@@ -86,8 +92,9 @@ public class ShiftAdminPanel extends JPanel {
 		tableCard.setBorder(new EmptyBorder(15, 15, 15, 15));
 
 		var header = new JLabel("DANH SÁCH CA LÀM VIỆC");
-		header.setFont(new Font("Segoe UI", Font.BOLD, 16));
+		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
+		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 		tableCard.add(header, BorderLayout.NORTH);
 
 		model = new DefaultTableModel(new String[] { "ID","Tên Ca", "Giờ Bắt Đầu", "Giờ Kết Thúc" }, 0) {
@@ -156,11 +163,25 @@ public class ShiftAdminPanel extends JPanel {
 		header.setForeground(Color.WHITE);
 		header.setPreferredSize(new Dimension(0, 40));
 
-		var headerRenderer = new DefaultTableCellRenderer();
-		headerRenderer.setHorizontalAlignment(JLabel.CENTER);
-		headerRenderer.setBackground(PRIMARY_BLUE);
-		headerRenderer.setForeground(Color.WHITE);
-		headerRenderer.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		var headerRenderer = new DefaultTableCellRenderer() {
+			@Override
+			public Component getTableCellRendererComponent(
+					JTable table, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
+
+				var lbl = (JLabel) super.getTableCellRendererComponent(
+						table, value, isSelected, hasFocus, row, column);
+
+				lbl.setHorizontalAlignment(JLabel.CENTER);
+				lbl.setForeground(Color.WHITE);
+				lbl.setBackground(PRIMARY_BLUE);
+				lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+				lbl.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
+				lbl.setOpaque(true);
+
+				return lbl;
+			}
+		};
 
 
 		t.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -171,6 +192,7 @@ public class ShiftAdminPanel extends JPanel {
 		t.setIntercellSpacing(new Dimension(1, 1));
 		t.setShowVerticalLines(true);
 		t.setShowHorizontalLines(true);
+		t.getTableHeader().setPreferredSize(new Dimension(0, 45));
 		var center = new DefaultTableCellRenderer();
 		center.setHorizontalAlignment(SwingConstants.CENTER);
 
