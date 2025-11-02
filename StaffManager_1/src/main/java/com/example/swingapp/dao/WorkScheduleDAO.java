@@ -1,8 +1,5 @@
 package com.example.swingapp.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -15,13 +12,14 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 
 	@Override
 	public boolean insert(WorkSchedule w) {
-		String sql =
-				"INSERT INTO tbl_work_schedule(" +
-						"employee_id, shift_id, work_date, come_late, early_leave, absent_id, " +
-						"time_work, total_ot, check_in_time, check_out_time) " +
-						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-		try (Connection conn = DBConnection.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql)) {
+		var sql =
+				"""
+				INSERT INTO tbl_work_schedule(\
+				employee_id, shift_id, work_date, come_late, early_leave, absent_id, \
+				time_work, total_ot, check_in_time, check_out_time) \
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, w.getEmployeeId());
 			ps.setInt(2, w.getShiftId());
 			ps.setDate(3, w.getWorkDate());
@@ -41,13 +39,14 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 
 	@Override
 	public boolean update(WorkSchedule w) {
-		String sql =
-				"UPDATE tbl_work_schedule SET " +
-						"shift_id=?, work_date=?, come_late=?, early_leave=?, absent_id=?, " +
-						"time_work=?, total_ot=?, check_in_time=?, check_out_time=? " +
-						"WHERE id=?";
-		try (Connection conn = DBConnection.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql)) {
+		var sql =
+				"""
+				UPDATE tbl_work_schedule SET \
+				shift_id=?, work_date=?, come_late=?, early_leave=?, absent_id=?, \
+				time_work=?, total_ot=?, check_in_time=?, check_out_time=? \
+				WHERE id=?""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, w.getShiftId());
 			ps.setDate(2, w.getWorkDate());
 			ps.setBoolean(3, w.isComeLate());
@@ -67,9 +66,9 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 
 	@Override
 	public boolean delete(int id) {
-		String sql = "DELETE FROM tbl_work_schedule WHERE id=?";
-		try (Connection conn = DBConnection.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql)) {
+		var sql = "DELETE FROM tbl_work_schedule WHERE id=?";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, id);
 			return ps.executeUpdate() > 0;
 		} catch (SQLException e) {
@@ -81,10 +80,10 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 	@Override
 	public List<WorkSchedule> getAll() {
 		List<WorkSchedule> list = new ArrayList<>();
-		String sql = "SELECT * FROM tbl_work_schedule";
-		try (Connection conn = DBConnection.getConnection();
-				Statement st = conn.createStatement();
-				ResultSet rs = st.executeQuery(sql)) {
+		var sql = "SELECT * FROM tbl_work_schedule";
+		try (var conn = DBConnection.getConnection();
+				var st = conn.createStatement();
+				var rs = st.executeQuery(sql)) {
 			while (rs.next()) {
 				list.add(new WorkSchedule(
 						rs.getInt("id"),
@@ -104,5 +103,62 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 			e.printStackTrace();
 		}
 		return list;
+	}
+
+
+	public int addAndReturnId(WorkSchedule ws) {
+		var sql = """
+				INSERT INTO tbl_Work_Schedule(employee_id, shift_id, work_date)
+				VALUES (?, ?, ?)
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+			ps.setInt(1, ws.getEmployeeId());
+			if(ws.getShiftId() != null) {
+				ps.setInt(2, ws.getShiftId());
+			} else {
+				ps.setNull(2, java.sql.Types.INTEGER); // quan trọng: setNull với OT
+			}
+			ps.setDate(3, ws.getWorkDate());
+
+
+			var affected = ps.executeUpdate();
+			if (affected == 0) {
+				return -1;
+			}
+
+			try (var rs = ps.getGeneratedKeys()) {
+				if (rs.next()) {
+					return rs.getInt(1);
+				}
+			}
+		} catch (SQLException e) { e.printStackTrace(); }
+		return -1;
+	}
+
+	public WorkSchedule getById(int id) {
+		var sql = "SELECT * FROM tbl_work_schedule WHERE id = ?";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, id);
+			try (var rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return new WorkSchedule(
+							rs.getInt("id"),
+							rs.getInt("employee_id"),
+							rs.getInt("shift_id"),
+							rs.getDate("work_date"),
+							rs.getBoolean("come_late"),
+							rs.getBoolean("early_leave"),
+							rs.getInt("absent_id"),
+							rs.getDouble("time_work"),
+							rs.getDouble("total_ot"),
+							rs.getTime("check_in_time"),
+							rs.getTime("check_out_time")
+							);
+				}
+			}
+		} catch (SQLException e) { e.printStackTrace(); }
+		return null;
 	}
 }

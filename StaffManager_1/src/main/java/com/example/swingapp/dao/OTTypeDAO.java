@@ -65,4 +65,22 @@ public class OTTypeDAO implements BaseDAO<OTType> {
 		} catch (SQLException e) { e.printStackTrace(); }
 		return list;
 	}
+	public OTType getById(int id) {
+		var sql = "SELECT * FROM tbl_ot_type WHERE id=?";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, id);
+			try (var rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return new OTType(
+							rs.getInt("id"),
+							rs.getString("ot_name"),
+							rs.getTime("ot_start"),
+							rs.getTime("ot_end")
+							);
+				}
+			}
+		} catch (SQLException e) { e.printStackTrace(); }
+		return null;
+	}
 }

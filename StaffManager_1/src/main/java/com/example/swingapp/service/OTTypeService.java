@@ -1,14 +1,18 @@
 package com.example.swingapp.service;
 
-import com.example.swingapp.dao.OTTypeDAO;
-import com.example.swingapp.model.OTType;
 import java.util.List;
 
-public class OTTypeService {
-    private final OTTypeDAO dao = new OTTypeDAO();
+import com.example.swingapp.dao.OTTypeDAO;
+import com.example.swingapp.model.OTType;
 
-    public List<OTType> getAll() { return dao.getAll(); }
-    public boolean add(OTType o) { return dao.insert(o); }
-    public boolean update(OTType o) { return dao.update(o); }
-    public boolean delete(int id) { return dao.delete(id); }
+public class OTTypeService {
+	private final OTTypeDAO dao = new OTTypeDAO();
+
+	public List<OTType> getAll() { return dao.getAll(); }
+	public boolean add(OTType o) { return dao.insert(o); }
+	public boolean update(OTType o) { return dao.update(o); }
+	public boolean delete(int id) { return dao.delete(id); }
+	public OTType getById(int id) {
+		return dao.getById(id);
+	}
 }

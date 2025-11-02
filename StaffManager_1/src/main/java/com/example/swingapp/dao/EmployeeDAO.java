@@ -127,4 +127,44 @@ public class EmployeeDAO implements BaseDAO<Employee> {
 		}
 		return list;
 	}
+	public Employee getById(int id) {
+		var sql = "SELECT * FROM tbl_employee WHERE id = ?";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, id);
+			var rs = ps.executeQuery();
+			if (rs.next()) {
+				return new Employee(
+						rs.getInt("id"),
+						rs.getString("name"),
+						rs.getString("role"),
+						rs.getString("phone"),
+						rs.getString("email"),
+						rs.getDate("dob"),
+						rs.getString("gender"),
+						rs.getInt("active")
+						);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public int getEmployeeIdByName(String name) {
+		var sql = "SELECT Id FROM tbl_Employee WHERE Name = ?";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+
+			ps.setString(1, name);
+			var rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getInt("Id");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
 }
