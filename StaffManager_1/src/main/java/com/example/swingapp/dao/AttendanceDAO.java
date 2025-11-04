@@ -6,6 +6,7 @@ import java.util.List;
 import javax.swing.JOptionPane;
 
 import com.example.swingapp.model.WorkDetail;
+import com.example.swingapp.model.WorkSchedule;
 import com.example.swingapp.util.DBConnection;
 
 public class AttendanceDAO {
@@ -17,10 +18,11 @@ public class AttendanceDAO {
 				SELECT
 				    e.id AS emp_id,
 				    e.name AS emp_name,
+				    r.id as restaurant_id,
 				    e.role,
 				    ISNULL(r.name, 'Chưa phân công') AS restaurant_name
 				FROM dbo.tbl_Employee e
-				LEFT JOIN dbo.tbl_Employee_Restaurant er ON e.id = er.employee_id
+				LEFT JOIN dbo.tbl_Employee_Restaurant er ON e.id = er.employee_id and er.active = 'True'
 				LEFT JOIN dbo.tbl_Restaurant r ON er.restaurant_id = r.id
 				ORDER BY e.id
 				""";
@@ -30,13 +32,14 @@ public class AttendanceDAO {
 				var rs = ps.executeQuery()) {
 
 			while (rs.next()) {
-				var row = new Object[6];
+				var row = new Object[7];
 				row[0] = rs.getInt("emp_id");
 				row[1] = rows.size() + 1;
 				row[2] = "NV" + String.format("%05d", rs.getInt("emp_id"));
 				row[3] = rs.getString("emp_name");
 				row[4] = rs.getString("role");
 				row[5] = rs.getString("restaurant_name");
+				row[6] = rs.getInt("restaurant_id");
 				rows.add(row);
 			}
 
@@ -193,6 +196,61 @@ public class AttendanceDAO {
 		}
 
 		return list;
+	}
+	public int hasWorkSchedule(int employeeId, String currentDate) {
+		var id = 0;
+		var sql = """
+					select ws.id
+					from tbl_Work_Schedule ws
+					where employee_id = ? and work_date = ?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, employeeId);
+			ps.setString(2, currentDate);
+			try (var rs = ps.executeQuery()) {
+				while (rs.next()) {
+					id = rs.getInt("id");
+				}
+			}
+
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return id;
+	}
+
+	public WorkSchedule getWorkScheduleByIdDate(int employeeId, String currentDate) {
+		var item = new WorkSchedule();
+		var sql = """
+					select ws.*
+					from tbl_Work_Schedule ws
+					where employee_id = ? and work_date = ?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, employeeId);
+			ps.setString(2, currentDate);
+			try (var rs = ps.executeQuery()) {
+				while (rs.next()) {
+					item.setId(rs.getInt("id"));
+					item.setEmployeeId(rs.getInt("employee_id"));
+					item.setShiftId(rs.getInt("shift_id"));
+					item.setWorkDate(rs.getDate("work_date"));
+					item.setGetComeLate(rs.getInt("come_late"));
+					item.setGetEarlyLeave(rs.getInt("early_leave"));
+					item.setAbsentId(rs.getInt("absent_id"));
+					item.setTimeWork(rs.getInt("time_work"));
+					item.setTotalOt(rs.getInt("total_ot"));
+					item.setCheckInTime(rs.getTime("check_in_time"));
+					item.setCheckOutTime(rs.getTime("check_out_time"));
+				}
+			}
+
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return item;
 	}
 
 

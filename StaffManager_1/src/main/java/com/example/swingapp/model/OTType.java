@@ -7,7 +7,15 @@ public class OTType {
 	private String otName;
 	private Time otStart;
 	private Time otEnd;
+	private boolean disabled;
 
+	public boolean isDisabled() {
+		return disabled;
+	}
+
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
+	}
 	public OTType() {}
 
 	public OTType(int id, String otName, Time otStart, Time otEnd) {

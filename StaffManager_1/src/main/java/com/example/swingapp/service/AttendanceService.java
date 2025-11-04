@@ -31,6 +31,7 @@ public class AttendanceService {
 		headers.add("Tên nhân viên");
 		headers.add("Chức vụ");
 		headers.add("Nhà hàng");
+		headers.add("restaurant_id");
 
 		var yearMonth = YearMonth.of(year, month);
 		for (var day = 1; day <= yearMonth.lengthOfMonth(); day++) {
@@ -49,7 +50,7 @@ public class AttendanceService {
 	public Object[][] getAttendanceByMonth(int year, int month) {
 		var key = year + "-" + month;
 
-		// ✅ Nếu đã cache, trả về luôn
+		//Nếu đã cache, trả về luôn
 		if (monthCache.containsKey(key)) {
 			System.out.println("[CACHE HIT] Dữ liệu tháng " + key + " lấy từ RAM");
 			return monthCache.get(key);
@@ -61,10 +62,10 @@ public class AttendanceService {
 		var header = buildAttendanceHeader(year, month);
 		var totalCols = header.size();
 
-		// 🔹 Chỉ load work schedule 1 lần
+		//Chỉ load work schedule 1 lần
 		var allWorkSchedules = dao.getAllWorkSchedules(year, month);
 
-		// 🔹 Gom theo employeeId
+		//Gom theo employeeId
 		var workMap = new HashMap<Integer, List<Object[]>>();
 		for (var record : allWorkSchedules) {
 			var empId = (int) record[0];
@@ -78,8 +79,9 @@ public class AttendanceService {
 			System.arraycopy(emp, 1, row, 0, 5);
 
 			for (var i = 5; i < totalCols - 4; i++) {
-				row[i] = ""; // reset các ngày
+				row[i] = "";
 			}
+			row[5] = emp[6];
 
 			var employeeId = (int) emp[0];
 			var works = workMap.getOrDefault(employeeId, List.of());
@@ -127,7 +129,7 @@ public class AttendanceService {
 
 		var data = rows.toArray(new Object[0][]);
 
-		// ✅ Lưu cache vào RAM
+		// lưu cache vào RAM
 		monthCache.put(key, data);
 
 		return data;
@@ -228,5 +230,11 @@ public class AttendanceService {
 
 	public int getEmployeeIdByName(String name) {
 		return (employeeDao.getEmployeeIdByName(name));
+	}
+	public int checkWorkScheduleId(int employeeId, String currentDate) {
+		return dao.hasWorkSchedule(employeeId, currentDate);
+	}
+	public WorkSchedule getWorkSheduleByIdDate(int employee_id, String currentDate ) {
+		return dao.getWorkScheduleByIdDate(employee_id, currentDate);
 	}
 }

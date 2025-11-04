@@ -3,10 +3,12 @@ package Admin;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -32,6 +34,17 @@ public class OverviewAdminPanel extends JPanel {
 	private DefaultTableModel attendanceModel;
 	private JTable tableAttendance;
 	private JTextField txtSearchAttendance;
+
+	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
+	private static final Color BG_LIGHT = new Color(250, 251, 255);
+	private static final Color CARD_WHITE = new Color(255, 255, 255);
+	private static final Color BORDER_COLOR = new Color(224, 235, 250);
+	private static final Color TEXT_PRIMARY = new Color(33, 33, 33);
+	private static final Color DANGER_RED = new Color(244, 67, 54);
+	private static final Color TEAL = new Color(0, 150, 136);
+	private static final Color SUCCESS_GREEN = new Color(76, 175, 80);
+	private static final Color WARNING_ORANGE = new Color(255, 152, 0);
+
 
 	public OverviewAdminPanel() {
 		setLayout(new BorderLayout());
@@ -91,7 +104,7 @@ public class OverviewAdminPanel extends JPanel {
 		});
 		headerPanel.add(txtSearchAttendance);
 
-		var btnSearch = createButton("Tìm", new Color(25, 118, 210));
+		var btnSearch = createButton("Tìm", PRIMARY_BLUE, 110);
 		btnSearch.addActionListener(e -> searchAttendance());
 		headerPanel.add(btnSearch);
 
@@ -136,11 +149,11 @@ public class OverviewAdminPanel extends JPanel {
 		var actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		actionPanel.setBackground(Color.WHITE);
 
-		var btnRefresh = createButton("Làm Mới", new Color(33, 150, 243));
+		var btnRefresh = createButton("Làm Mới", new Color(33, 150, 243), 110);
 		btnRefresh.addActionListener(e -> refreshAttendance());
 		actionPanel.add(btnRefresh);
 
-		var btnExport = createButton("Xuất PDF", new Color(0, 150, 136));
+		var btnExport = createButton("Xuất PDF", DANGER_RED, 110);
 		btnExport.addActionListener(e -> exportAttendancePDF());
 		actionPanel.add(btnExport);
 
@@ -149,16 +162,52 @@ public class OverviewAdminPanel extends JPanel {
 		return section;
 	}
 
-	private static JButton createButton(String text, Color bgColor) {
-		var btn = new JButton(text);
-		btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-		btn.setBackground(bgColor);
-		btn.setForeground(Color.WHITE);
-		btn.setFocusPainted(false);
-		btn.setPreferredSize(new Dimension(100, 35));
-		btn.setBorderPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		return btn;
+	public static JButton createButton(String text, Color bg, int w) {
+		JButton b = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				var g2 = (Graphics2D) g;
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				// Hiệu ứng hover mượt hơn
+				var fillColor = bg;
+				if (getModel().isPressed()) {
+					fillColor = bg.darker();
+				} else if (getModel().isRollover()) {
+					fillColor = bg.brighter();
+				}
+
+				// Bo tròn góc
+				g2.setColor(fillColor);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+
+				// Viền nhẹ nếu muốn tinh tế hơn
+				g2.setColor(new Color(0, 0, 0, 20));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
+
+				// Vẽ text giữa nút
+				g2.setColor(Color.WHITE);
+				var fm = g2.getFontMetrics();
+				var textWidth = fm.stringWidth(getText());
+				var textHeight = fm.getAscent();
+				g2.drawString(getText(), (getWidth() - textWidth) / 2,
+						(getHeight() + textHeight - fm.getDescent()) / 2);
+			}
+		};
+
+		// Cấu hình cơ bản
+		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		b.setForeground(Color.WHITE);
+		b.setPreferredSize(new Dimension(w, 36));
+		b.setContentAreaFilled(false);
+		b.setBorderPainted(false);
+		b.setFocusPainted(false);
+		b.setRolloverEnabled(true);
+
+		// 👇 Thêm dòng này để con trỏ chuột đổi thành bàn tay khi hover
+		b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+		return b;
 	}
 
 	private void styleTable(JTable table) {

@@ -6,6 +6,9 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.text.MessageFormat;
 import java.time.LocalDate;
@@ -94,7 +97,7 @@ public class PayrollAdminPanel extends JPanel {
 		monthFilter.setSelectedIndex(14);
 		monthFilter.addActionListener(e -> onRestaurantSelected());
 
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110, 36);
+		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnSearch.addActionListener(e -> search());
 		}
@@ -104,7 +107,7 @@ public class PayrollAdminPanel extends JPanel {
 		searchPanel.add(resFilter);
 		searchPanel.add(btnSearch);
 
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110, 36);
+		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnAdd.addActionListener(e -> addNew());
 		}
@@ -125,11 +128,11 @@ public class PayrollAdminPanel extends JPanel {
 		// ==== ACTIONS (BOTTOM) ====
 		var actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		actions.setBackground(BG_LIGHT);
-		var btnDelete = createButton("Xóa", DANGER_RED, 110, 36);
+		var btnDelete = createButton("Xóa", DANGER_RED, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnDelete.addActionListener(e -> deleteRow());
 		}
-		var btnPDF = createButton("Xuất PDF", TEAL, 110, 36);
+		var btnPDF = createButton("Xuất PDF", TEAL, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnPDF.addActionListener(e -> printPDF());
 		}
@@ -206,17 +209,54 @@ public class PayrollAdminPanel extends JPanel {
 		return f;
 	}
 
-	private JButton createButton(String text, Color bg, int w, int h) {
-		var b = new JButton(text);
+	public static JButton createButton(String text, Color bg, int w) {
+		JButton b = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				var g2 = (Graphics2D) g;
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				// Hiệu ứng hover mượt hơn
+				var fillColor = bg;
+				if (getModel().isPressed()) {
+					fillColor = bg.darker();
+				} else if (getModel().isRollover()) {
+					fillColor = bg.brighter();
+				}
+
+				// Bo tròn góc
+				g2.setColor(fillColor);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+
+				// Viền nhẹ nếu muốn tinh tế hơn
+				g2.setColor(new Color(0, 0, 0, 20));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
+
+				// Vẽ text giữa nút
+				g2.setColor(Color.WHITE);
+				var fm = g2.getFontMetrics();
+				var textWidth = fm.stringWidth(getText());
+				var textHeight = fm.getAscent();
+				g2.drawString(getText(), (getWidth() - textWidth) / 2,
+						(getHeight() + textHeight - fm.getDescent()) / 2);
+			}
+		};
+
+		// Cấu hình cơ bản
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		b.setForeground(Color.WHITE);
-		b.setBackground(bg);
-		b.setPreferredSize(new Dimension(w, h));
-		b.setFocusPainted(false);
+		b.setPreferredSize(new Dimension(w, 36));
+		b.setContentAreaFilled(false);
 		b.setBorderPainted(false);
-		b.setMinimumSize(new Dimension(30, 36));
+		b.setFocusPainted(false);
+		b.setRolloverEnabled(true);
+
+		// 👇 Thêm dòng này để con trỏ chuột đổi thành bàn tay khi hover
+		b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
 		return b;
 	}
+
 
 	private void styleTable(JTable t) {
 		t.setFont(new Font("Segoe UI", Font.PLAIN, 13));

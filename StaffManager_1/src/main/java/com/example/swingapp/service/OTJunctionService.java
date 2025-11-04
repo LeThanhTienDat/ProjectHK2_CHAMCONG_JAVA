@@ -26,6 +26,12 @@ public class OTJunctionService {
 		}
 		return list;
 	}
+	public List<OTJunction> getByWorkScheduleId(int workSchedule_id) {
+		var list = dao.getByWorkScheduleId(workSchedule_id);
+
+		return list;
+	}
+
 	public OTJunction getById(int id) {
 		return dao.getAll().stream()
 				.filter(o -> o.getId() == id)

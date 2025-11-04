@@ -6,6 +6,9 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,8 +24,14 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
+import com.example.swingapp.dao.WorkScheduleDAO;
 import com.example.swingapp.model.DayWorkStatus;
+import com.example.swingapp.model.OTJunction;
+import com.example.swingapp.model.Shift;
+import com.example.swingapp.model.WorkSchedule;
 import com.example.swingapp.service.AttendanceService;
+import com.example.swingapp.service.OTJunctionService;
+import com.example.swingapp.service.OTTypeService;
 import com.example.swingapp.service.ShiftService;
 import com.example.swingapp.service.WorkScheduleService;
 
@@ -43,6 +52,7 @@ public class AttendanceFormPanel extends JPanel {
 	private Runnable onDataChanged;
 
 	private final WorkScheduleService workScheduleService = new WorkScheduleService();
+	private final OTJunctionService otJunctionService = new OTJunctionService();
 	private int currentEmployeeId;
 
 	public void setOnDataChanged(Runnable r) {
@@ -71,13 +81,19 @@ public class AttendanceFormPanel extends JPanel {
 		shiftListPanel.setLayout(new BoxLayout(shiftListPanel, BoxLayout.Y_AXIS));
 		shiftListPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
 
-		var scroll = new JScrollPane(shiftListPanel);
+		// 👇 Bọc shiftListPanel trong wrapper để dính top
+		var wrapper = new JPanel(new BorderLayout());
+		wrapper.setOpaque(false);
+		wrapper.add(shiftListPanel, BorderLayout.NORTH);
+
+		var scroll = new JScrollPane(wrapper);
 		scroll.setBorder(null);
 		scroll.setOpaque(false);
 		scroll.getViewport().setOpaque(false);
 		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		scroll.getVerticalScrollBar().setUnitIncrement(16);
+
 
 		var actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actions.setOpaque(false);
@@ -98,7 +114,12 @@ public class AttendanceFormPanel extends JPanel {
 	}
 
 	// --- Separate logic methods (để WindowBuilder không lỗi lambda)
-	private void onAddShift() {
+	public void onAddShift() {
+		var checkWorkSchedule = service.checkWorkScheduleId(currentEmployeeId, currentDate);
+		if(checkWorkSchedule > 0) {
+			JOptionPane.showMessageDialog(this, "Ca làm đã tồn tại!");
+			return;
+		}
 		var shiftTypes = new ShiftService().getAll();
 		showAddDialog("ca làm", shiftTypes,
 				s -> s.getShiftName() + " (" + s.getStartTime() + " - " + s.getEndTime() + ")",
@@ -115,8 +136,10 @@ public class AttendanceFormPanel extends JPanel {
 							service.clearCache(dateObj.getYear(), dateObj.getMonthValue());
 							var newStatus = new DayWorkStatus(
 									selectedShift.getShiftName() + " (" + selectedShift.getStartTime() + " - " + selectedShift.getEndTime() + ")", false);
-							shiftListPanel.add(createShiftPanel(newStatus));
-							shiftListPanel.add(Box.createVerticalStrut(10));
+							var workScheduleInfo = service.getWorkSheduleByIdDate(currentEmployeeId, currentDate);
+							shiftListPanel.add(Box.createVerticalStrut(10), 1);
+							shiftListPanel.setAlignmentY(TOP_ALIGNMENT);
+							shiftListPanel.add(createShiftPanel(newStatus, workScheduleInfo), 1);
 							shiftListPanel.revalidate();
 							shiftListPanel.repaint();
 
@@ -133,33 +156,98 @@ public class AttendanceFormPanel extends JPanel {
 				});
 	}
 
-	private void onAddOT() {
-		var otTypes = new com.example.swingapp.service.OTTypeService().getAll();
+	public void onAddOT() {
+		var workScheduleInfo = service.getWorkSheduleByIdDate(currentEmployeeId, currentDate);
+		List<OTJunction> existOt = new ArrayList<>();
+		if (workScheduleInfo != null) {
+			existOt = otJunctionService.getByWorkScheduleId(workScheduleInfo.getId());
+		}
+
+		var shiftId = 0;
+		Shift shiftInfo = null;
+		if (workScheduleInfo != null) {
+			shiftId = workScheduleInfo.getShiftId();
+		}
+		if (shiftId > 0) {
+			var shiftService = new ShiftService();
+			shiftInfo = shiftService.getById(shiftId);
+		}
+
+		var otTypes = new OTTypeService().getAll();
+
+		// 🔹 1. Loại bỏ những OT đã tồn tại (trùng ID)
+		if (existOt != null && !existOt.isEmpty()) {
+			var existOtIds = existOt.stream()
+					.map(OTJunction::getOtTypeId)
+					.toList();
+			otTypes.removeIf(ot -> existOtIds.contains(ot.getId()));
+		}
+
+		// 🔹 2. Loại bỏ những OT trùng giờ với ca chính
+		if (shiftInfo != null && shiftInfo.getStartTime() != null && shiftInfo.getEndTime() != null) {
+			var shiftStart = shiftInfo.getStartTime().toLocalTime();
+			var shiftEnd = shiftInfo.getEndTime().toLocalTime();
+
+			otTypes.removeIf(ot -> {
+				var otStart = ot.getOtStart().toLocalTime();
+				var otEnd = ot.getOtEnd().toLocalTime();
+				var overlap = otStart.isBefore(shiftEnd) && otEnd.isAfter(shiftStart);
+				return overlap;
+			});
+		}
+
+		// 🔹 3. Loại bỏ những OT trùng giờ với các OT đã có
+		if (existOt != null && !existOt.isEmpty()) {
+			var otTypeService = new OTTypeService();
+			for (var existing : existOt) {
+				var existingType = otTypeService.getById(existing.getOtTypeId());
+				if (existingType != null) {
+					var existStart = existingType.getOtStart().toLocalTime();
+					var existEnd = existingType.getOtEnd().toLocalTime();
+
+					otTypes.removeIf(ot -> {
+						var otStart = ot.getOtStart().toLocalTime();
+						var otEnd = ot.getOtEnd().toLocalTime();
+						// true nếu giao nhau về thời gian
+						return otStart.isBefore(existEnd) && otEnd.isAfter(existStart);
+					});
+				}
+			}
+		}
+
+		// 🔹 Hiển thị dialog chọn OT
 		showAddDialog("OT", otTypes,
 				ot -> ot.getOtName() + " (" + ot.getOtStart() + " - " + ot.getOtEnd() + ")",
 				selectedOT -> {
 					try {
-						var otWork = new com.example.swingapp.model.WorkSchedule();
+						var workScheduleId = 0;
+						var otWork = new WorkSchedule();
 						otWork.setEmployeeId(currentEmployeeId);
 						otWork.setId(null);
 						otWork.setWorkDate(java.sql.Date.valueOf(currentDate));
 
-						var workScheduleId = workScheduleService.addAndReturnId(otWork);
-						if (workScheduleId == -1) {
-							JOptionPane.showMessageDialog(this, "Tạo WorkSchedule cho OT thất bại!");
-							return;
+						var otJunction = new OTJunction();
+						otJunction.setOtTypeId(selectedOT.getId());
+						otJunction.setOtConfirm(true);
+
+						var getWorkScheduleId = service.checkWorkScheduleId(currentEmployeeId, currentDate);
+						if (getWorkScheduleId > 0) {
+							otJunction.setWorkScheduleId(getWorkScheduleId);
+						} else {
+							workScheduleId = workScheduleService.addAndReturnId(otWork);
+							if (workScheduleId == -1) {
+								JOptionPane.showMessageDialog(this, "Tạo WorkSchedule cho OT thất bại!");
+								return;
+							}
+							otJunction.setWorkScheduleId(workScheduleId);
 						}
 
-						var otJunction = new com.example.swingapp.model.OTJunction();
-						otJunction.setWorkScheduleId(workScheduleId);
-						otJunction.setOtTypeId(selectedOT.getId());
-						otJunction.setOtConfirm(false);
-
-						var success = new com.example.swingapp.service.OTJunctionService().add(otJunction);
+						var success = new OTJunctionService().add(otJunction);
 						if (success) {
 							JOptionPane.showMessageDialog(this, "Thêm OT thành công!");
-							shiftListPanel.add(Box.createVerticalStrut(10));
-							shiftListPanel.add(createOTPanel(otJunction));
+							shiftListPanel.add(Box.createVerticalStrut(10), 1);
+							shiftListPanel.add(createOTPanel(otJunction), 1);
+							shiftListPanel.setAlignmentY(TOP_ALIGNMENT);
 							shiftListPanel.revalidate();
 							shiftListPanel.repaint();
 
@@ -176,6 +264,7 @@ public class AttendanceFormPanel extends JPanel {
 				});
 	}
 
+
 	// ✅ Hiển thị danh sách ca làm
 	public void showEmployeeSchedule(int employeeId, String employeeName, String date, List<DayWorkStatus> dayStatusList) {
 		currentEmployeeId = employeeId;
@@ -183,11 +272,14 @@ public class AttendanceFormPanel extends JPanel {
 		currentDate = date;
 
 		shiftListPanel.removeAll();
+		var workScheduleInfo = service.getWorkSheduleByIdDate(currentEmployeeId, currentDate);
 
 		var headerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		headerPanel.setOpaque(false);
-		var header = new JLabel("Lịch làm của " + employeeName + " ngày " + date);
-		header.setFont(new Font("Segoe UI", Font.BOLD, 14));
+		var fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		var formattedDate = LocalDate.parse(date).format(fmt);
+		var header = new JLabel("Lịch làm của " + employeeName + " ngày " + formattedDate);
+		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		headerPanel.add(header);
 		shiftListPanel.add(headerPanel);
@@ -199,13 +291,13 @@ public class AttendanceFormPanel extends JPanel {
 			shiftListPanel.add(empty);
 		} else {
 			for (DayWorkStatus s : dayStatusList) {
-				shiftListPanel.add(createShiftPanel(s));
+				shiftListPanel.add(createShiftPanel(s, workScheduleInfo));
 				shiftListPanel.add(Box.createVerticalStrut(10));
 			}
 		}
 
 		var otService = new com.example.swingapp.service.OTJunctionService();
-		var otList = otService.getByEmployeeAndDate(employeeId, date);
+		var otList = otService.getByWorkScheduleId(workScheduleInfo.getId());
 		for (com.example.swingapp.model.OTJunction ot : otList) {
 			shiftListPanel.add(createOTPanel(ot));
 			shiftListPanel.add(Box.createVerticalStrut(10));
@@ -215,59 +307,103 @@ public class AttendanceFormPanel extends JPanel {
 		shiftListPanel.repaint();
 	}
 
-	// --- Panel hiển thị OT
-	private JPanel createOTPanel(com.example.swingapp.model.OTJunction ot) {
-		var p = new JPanel(new BorderLayout());
-		p.setBackground(new Color(255, 250, 240));
-		p.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
-				new EmptyBorder(16, 20, 16, 20)));
+	public JPanel createOTPanel(OTJunction ot) {
+		var otType = new OTTypeService().getById(ot.getOtTypeId());
+		if (otType == null) {
+			var empty = new JPanel();
+			empty.setBackground(Color.WHITE);
+			empty.setBorder(BorderFactory.createLineBorder(new Color(224, 235, 250), 1, true));
+			empty.add(new JLabel("Không tìm thấy loại OT"));
+			return empty;
+		}
 
-		var otType = new com.example.swingapp.service.OTTypeService().getById(ot.getOtTypeId());
-		var otName = (otType != null) ? otType.getOtName() : "OT";
-		var start = (otType != null && otType.getOtStart() != null) ? otType.getOtStart() : "--:--";
-		var end = (otType != null && otType.getOtEnd() != null) ? otType.getOtEnd() : "--:--";
 
-		var label = new JLabel("OT: " + otName + " (" + start + " - " + end + ")");
-		label.setFont(new Font("Segoe UI", Font.BOLD, 13));
-		label.setForeground(new Color(80, 80, 80));
-		p.add(label, BorderLayout.CENTER);
+		var otName = otType.getOtName();
+		var otStart = otType.getOtStart();
+		var otEnd = otType.getOtEnd();
 
-		return p;
+		var otFullName = String.format("%s (%s - %s)",
+				otName,
+				otStart != null ? otStart.toString() : "--:--",
+						otEnd != null ? otEnd.toString() : "--:--");
+
+		var ws = new WorkScheduleDAO().getById(ot.getWorkScheduleId());
+		var otDetailsPanel = new OtDetailsPanel(ws, otFullName,
+				new ShiftService().getById(ws.getShiftId()),ot, otType);
+
+		// Giữ kích thước đồng nhất với ca làm
+		var fixedSize = new Dimension(817, 150);
+		otDetailsPanel.setPreferredSize(fixedSize);
+		otDetailsPanel.setMinimumSize(fixedSize);
+		otDetailsPanel.setMaximumSize(fixedSize);
+
+		return otDetailsPanel;
 	}
 
 	// --- Panel hiển thị ca làm
-	private JPanel createShiftPanel(DayWorkStatus status) {
+	public JPanel createShiftPanel(DayWorkStatus status,WorkSchedule ws) {
 		var shiftName = status.getShiftName();
 		var isPresent = status.isPresent();
+
+		if (ws == null || ws.getShiftId() == null) {
+			var p = new JPanel(new BorderLayout());
+			p.setBackground(Color.WHITE);
+			p.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+					new EmptyBorder(16, 20, 16, 20)));
+			p.setPreferredSize(new Dimension(600, 70));
+			p.setMinimumSize(new Dimension(600, 600));
+			var l = new JLabel(status.getShiftName() + (status.isPresent() ? " - X" : ""));
+			l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+			l.setForeground(new Color(50, 50, 50));
+			p.add(l, BorderLayout.CENTER);
+			return p;
+		}
 
 		var p = new JPanel(new BorderLayout());
 		p.setBackground(Color.WHITE);
 		p.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
-				new EmptyBorder(16, 20, 16, 20)));
+				new EmptyBorder(10, 30, 10, 30)));
 
 		var l = new JLabel(shiftName + (isPresent ? " - X" : ""));
 		l.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		l.setForeground(new Color(50, 50, 50));
 		p.add(l, BorderLayout.CENTER);
 
-		return p;
+		var shift = new ShiftService().getById(ws.getShiftId());
+		var shiftFullName = (shift != null) ?
+				shift.getShiftName() + " (" + shift.getStartTime() + " - " + shift.getEndTime() + ")"
+				: status.getShiftName();
+		ActionListener removeAction = e -> {
+
+		};
+
+		var shiftPanel = new ShiftDetailsPanel(ws, shiftFullName, shift);
+
+		// 👉 Giữ kích thước cố định cho mỗi ca làm
+		var fixedSize = new Dimension(817, 150);
+		shiftPanel.setPreferredSize(fixedSize);
+		shiftPanel.setMinimumSize(fixedSize);
+		shiftPanel.setMaximumSize(fixedSize);
+
+		return shiftPanel;
+
 	}
 
-	private String extractShiftName(String fullName) {
+	public String extractShiftName(String fullName) {
 		var idx = fullName.indexOf(" (");
 		return (idx > 0) ? fullName.substring(0, idx) : fullName;
 	}
 
-	private JButton button(String text, Color bg) {
+	public static JButton button(String text, Color bg) {
 		var b = new JButton(text);
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		b.setForeground(Color.WHITE);
 		b.setBackground(bg);
 		b.setFocusPainted(false);
 		b.setBorderPainted(false);
-		b.setPreferredSize(new Dimension(100, 36));
+		b.setPreferredSize(new Dimension(130, 36));
 		return b;
 	}
 
@@ -286,6 +422,31 @@ public class AttendanceFormPanel extends JPanel {
 		var displayArr = items.stream().map(displayFunc).toArray(String[]::new);
 		var combo = new JComboBox<String>(displayArr);
 
+		combo.setRenderer((list, value, index, isSelected, cellHasFocus) -> {
+			var label = new JLabel(value);
+			label.setOpaque(true);
+
+			if (isSelected) {
+				label.setBackground(new Color(220, 235, 255));
+			} else {
+				label.setBackground(Color.WHITE);
+			}
+
+			// ⚠️ Chỉ kiểm tra khi index >= 0 để tránh lỗi IndexOutOfBounds
+			if (index >= 0 && items.get(index) instanceof com.example.swingapp.model.OTType otType && otType.isDisabled()) {
+				label.setForeground(Color.GRAY);
+				label.setEnabled(false);
+			} else {
+				label.setForeground(Color.BLACK);
+			}
+
+			return label;
+		});
+
+
+
+
+
 		var panel = new JPanel();
 		panel.add(new JLabel("Chọn " + title + ":"));
 		panel.add(combo);
@@ -296,6 +457,10 @@ public class AttendanceFormPanel extends JPanel {
 		if (result == JOptionPane.OK_OPTION) {
 			var selectedIndex = combo.getSelectedIndex();
 			var selectedItem = items.get(selectedIndex);
+			if (selectedItem instanceof com.example.swingapp.model.OTType otType && otType.isDisabled()) {
+				JOptionPane.showMessageDialog(this, "Không thể chọn OT trùng với ca làm!");
+				return;
+			}
 			saveAction.accept(selectedItem);
 
 			shiftListPanel.removeAll();

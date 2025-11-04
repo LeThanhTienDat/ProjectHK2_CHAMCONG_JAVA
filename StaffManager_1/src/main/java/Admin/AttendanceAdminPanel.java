@@ -3,6 +3,7 @@ package Admin;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -10,7 +11,9 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.text.MessageFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -29,7 +32,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
+import com.example.swingapp.model.Restaurant;
 import com.example.swingapp.service.AttendanceService;
+import com.example.swingapp.service.RestaurantService;
 
 public class AttendanceAdminPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -37,6 +42,8 @@ public class AttendanceAdminPanel extends JPanel {
 	private DefaultTableModel model;
 	private JTextField txtSearch;
 	private JComboBox<String> cmbMonthYear;
+	private JComboBox<Restaurant> resFilter;
+	private boolean isInitializing = true;
 	private final AttendanceService service = new AttendanceService();
 
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
@@ -68,21 +75,6 @@ public class AttendanceAdminPanel extends JPanel {
 		if (cmbMonthYear == null) {
 			return;
 		}
-
-		var currentMonthYear = java.time.LocalDate.now()
-				.format(java.time.format.DateTimeFormatter.ofPattern("MM/yyyy"));
-		var found = false;
-		for (var i = 0; i < cmbMonthYear.getItemCount(); i++) {
-			if (currentMonthYear.equals(cmbMonthYear.getItemAt(i))) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			cmbMonthYear.addItem(currentMonthYear);
-		}
-		cmbMonthYear.setSelectedItem(currentMonthYear);
-
 		updateTableHeaderAndData();
 		cmbMonthYear.addActionListener(e -> updateTableHeaderAndData());
 	}
@@ -101,12 +93,24 @@ public class AttendanceAdminPanel extends JPanel {
 			months[i] = String.format("%02d/%d", i + 1, year);
 		}
 
-		cmbMonthYear = new JComboBox<>(months);
+		cmbMonthYear = new JComboBox<>();
 		cmbMonthYear.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-		cmbMonthYear.setBackground(Color.WHITE);
-		cmbMonthYear.setPreferredSize(new Dimension(140, 36));
+		cmbMonthYear.setBackground(new Color(248, 250, 252));
+		cmbMonthYear.setPreferredSize(new Dimension(200, 36));
+		cmbMonthYear.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+				new EmptyBorder(8, 12, 8, 12)));
+		var now = LocalDate.now();
+		for (var i = 14; i >= 0; i--) {
+			var month = now.minusMonths(i);
+			var item = String.format("Tháng %d / %d", month.getMonthValue(), month.getYear());
+			cmbMonthYear.addItem(item);
+		}
+		cmbMonthYear.setSelectedIndex(14);
+		//		cmbMonthYear.addActionListener(e -> onRestaurantSelected());
 
 		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 300);
+		txtSearch.setColumns(30);
 		txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
 			@Override
 			public void insertUpdate(javax.swing.event.DocumentEvent e) { update(); }
@@ -120,34 +124,68 @@ public class AttendanceAdminPanel extends JPanel {
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
 		btnSearch.addActionListener(e -> updateTableHeaderAndData());
 
+		resFilter = new JComboBox<Restaurant>();
+		resFilter.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		resFilter.setBackground(Color.WHITE);
+		resFilter.setPreferredSize(new Dimension(140, 36));
+		resFilter.addActionListener(e -> updateTableHeaderAndData());
+		renderRestaurant();
+
+
+		p.add(txtSearch);
 		p.add(new JLabel("Tháng/Năm: "));
 		p.add(cmbMonthYear);
+		p.add(new JLabel("Nhà hàng: "));
+		p.add(resFilter);
 		p.add(Box.createHorizontalStrut(10));
-		p.add(txtSearch);
 		p.add(btnSearch);
 		return p;
 	}
 
 	public void updateTableHeaderAndData() {
-		var selected = (String) cmbMonthYear.getSelectedItem();
-		if (selected == null || selected.isEmpty()) {
-			return;
+		var monthStr = (String) cmbMonthYear.getSelectedItem();
+		int month = 0, year = 0;
+		if (monthStr != null && monthStr.contains("/")) {
+			var parts = monthStr.replace("Tháng", "").split("/");
+			month = Integer.parseInt(parts[0].trim());
+			year = Integer.parseInt(parts[1].trim());
 		}
-
-		var parts = selected.split("/");
-		var month = parseIntSafe(parts[0]);
-		var year = parseIntSafe(parts[1]);
+		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
+		var restaurantId = selectedRestaurant != null ? selectedRestaurant.getId() : 0;
 
 		List<String> headers = service.buildAttendanceHeader(year, month);
 		var allData = service.getAttendanceByMonth(year, month);
-		var query = txtSearch.getText().trim().toLowerCase();
-
+		var query = txtSearch.getText();
+		if (query == null) {
+			query = "";
+		}
+		query = query.trim().toLowerCase();
+		if (query.isEmpty() || "tìm kiếm theo tên nhân viên...".equals(query)) {
+			query = null;
+		}
 		List<Object[]> displayData = new ArrayList<>();
 		for (Object[] row : allData) {
 			var tmp = row.clone();
-			if (!query.isEmpty()) {
+			if (allData.length > 0) {
+				System.out.println("Cấu trúc 1 dòng allData:");
+				System.out.println(Arrays.toString(allData[0]));
+			}
+			Integer rowRestaurantId = null;
+			if (row[5] instanceof Integer) {
+				rowRestaurantId = (Integer) row[5];
+			}
+
+			// ✅ Nếu có chọn nhà hàng, chỉ giữ dòng khớp id
+			if (restaurantId != 0) {
+				if (rowRestaurantId == null || !rowRestaurantId.equals(restaurantId)) {
+					continue; // bỏ qua nhân viên không thuộc nhà hàng được chọn
+				}
+			}
+
+
+			if (query != null && !query.isEmpty()) {
 				var name = row[2] != null ? row[2].toString().toLowerCase() : "";
-				if (!name.contains(query)) {
+				if (!name.contains(query.toLowerCase())) {
 					for (var i = 5; i < tmp.length; i++) {
 						tmp[i] = tmp[i] != null ? tmp[i].toString().toUpperCase() : "";
 					}
@@ -160,6 +198,18 @@ public class AttendanceAdminPanel extends JPanel {
 		SwingUtilities.invokeLater(() -> {
 			model.setDataVector(displayData.toArray(new Object[0][]), headers.toArray());
 			autoResizeColumns(table);
+			// 🧹 Xóa cột restaurant_id ra khỏi bảng hiển thị
+			var restaurantIdColIndex = -1;
+			for (var i = 0; i < table.getColumnCount(); i++) {
+				if ("restaurant_id".equalsIgnoreCase(table.getColumnName(i))) {
+					restaurantIdColIndex = i;
+					break;
+				}
+			}
+			if (restaurantIdColIndex != -1) {
+				table.removeColumn(table.getColumnModel().getColumn(restaurantIdColIndex));
+			}
+
 			DefaultTableCellRenderer dayRenderer = new DefaultTableCellRenderer() {
 				@Override
 				public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
@@ -194,11 +244,11 @@ public class AttendanceAdminPanel extends JPanel {
 					}
 
 					// Cột ngày (5 → totalCols-4) highlight đỏ nếu đi trễ >5 hoặc về sớm >5
-					if (column >= 5 && column < totalCols - 4 && !cellText.isEmpty()) {
+					if (column >= 6 && column < totalCols - 4 && !cellText.isEmpty()) {
 						var totalLate = parseIntSafe(table.getValueAt(row, totalCols - 4));
 						var totalEarly = parseIntSafe(table.getValueAt(row, totalCols - 3));
 
-						if (totalLate > 5 || totalEarly > 5) {
+						if (totalLate > 6 || totalEarly > 6) {
 							lbl.setBackground(new Color(255, 102, 102));
 						}
 					}
@@ -345,9 +395,12 @@ public class AttendanceAdminPanel extends JPanel {
 					if (row >= 0 && col >= startDayColumn) {
 						// Lấy tháng/năm từ combo
 						var selected = (String) cmbMonthYear.getSelectedItem();
-						var parts = selected.split("/");
-						var month = Integer.parseInt(parts[0]);
-						var year = Integer.parseInt(parts[1]);
+						int month = 0, year = 0;
+						if (selected != null && selected.contains("/")) {
+							var parts = selected.replace("Tháng", "").split("/");
+							month = Integer.parseInt(parts[0].trim());
+							year = Integer.parseInt(parts[1].trim());
+						}
 						var ym = java.time.YearMonth.of(year, month);
 						var daysInMonth = ym.lengthOfMonth();
 
@@ -454,9 +507,13 @@ public class AttendanceAdminPanel extends JPanel {
 						var day = column - startDayCol + 1;
 						var empId = (int) table.getValueAt(row, 0);
 
-						var parts = ((String)cmbMonthYear.getSelectedItem()).split("/");
-						var month = Integer.parseInt(parts[0]);
-						var year = Integer.parseInt(parts[1]);
+						var monthStr = (String) cmbMonthYear.getSelectedItem();
+						int month = 0, year = 0;
+						if (monthStr != null && monthStr.contains("/")) {
+							var parts = monthStr.replace("Tháng", "").split("/");
+							month = Integer.parseInt(parts[0].trim());
+							year = Integer.parseInt(parts[1].trim());
+						}
 
 						var schedules = service.getWorkSchedules(empId, year, month, day);
 
@@ -605,12 +662,23 @@ public class AttendanceAdminPanel extends JPanel {
 			protected void paintComponent(Graphics g) {
 				var g2 = (Graphics2D) g;
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(getModel().isPressed() ? bg.darker() : getModel().isRollover() ? bg.brighter() : bg);
-				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+
+				var fillColor = bg;
+				if (getModel().isPressed()) {
+					fillColor = bg.darker();
+				} else if (getModel().isRollover()) {
+					fillColor = bg.brighter();
+				}
+				g2.setColor(fillColor);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+				g2.setColor(new Color(0, 0, 0, 20));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
 				g2.setColor(Color.WHITE);
 				var fm = g2.getFontMetrics();
-				g2.drawString(getText(), (getWidth() - fm.stringWidth(getText())) / 2,
-						(getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+				var textWidth = fm.stringWidth(getText());
+				var textHeight = fm.getAscent();
+				g2.drawString(getText(), (getWidth() - textWidth) / 2,
+						(getHeight() + textHeight - fm.getDescent()) / 2);
 			}
 		};
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -619,8 +687,11 @@ public class AttendanceAdminPanel extends JPanel {
 		b.setContentAreaFilled(false);
 		b.setBorderPainted(false);
 		b.setFocusPainted(false);
+		b.setRolloverEnabled(true);
+		b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 		return b;
 	}
+
 
 	public void showLegendDialog() {
 		var dialog = new AttendanceLegendDialog(this);
@@ -658,17 +729,21 @@ public class AttendanceAdminPanel extends JPanel {
 	}
 
 	public void openAttendanceForm(int row, int col) {
+		var modelCol = table.convertColumnIndexToModel(col);
 		var employeeName = model.getValueAt(row, 2).toString();
-		var dateHeader = model.getColumnName(col); // ví dụ "01/11"
+		var dateHeader = model.getColumnName(modelCol); // ví dụ "01/11"
 
 		// Lấy employeeId từ tên
 		var empId = service.getEmployeeIdByName(employeeName);
 
 		// Lấy năm hiện tại từ combo
-		var selected = (String) cmbMonthYear.getSelectedItem();
-		var parts = selected.split("/");
-		var month = Integer.parseInt(parts[0]);
-		var year = Integer.parseInt(parts[1]);
+		var monthStr = (String) cmbMonthYear.getSelectedItem();
+		int month = 0, year = 0;
+		if (monthStr != null && monthStr.contains("/")) {
+			var parts = monthStr.replace("Tháng", "").split("/");
+			month = Integer.parseInt(parts[0].trim());
+			year = Integer.parseInt(parts[1].trim());
+		}
 
 		// Tách ngày/tháng từ header ("01/11")
 		var headerParts = dateHeader.split("/");
@@ -688,31 +763,61 @@ public class AttendanceAdminPanel extends JPanel {
 
 		// Hiển thị form (chỉ xem, không nhập tay)
 		var dialog = new javax.swing.JDialog(SwingUtilities.getWindowAncestor(this),
-				"Lịch làm của " + employeeName + " (" + formattedDate + ")");
+				"Lịch làm của " + employeeName + " (" + formattedDate + ")",ModalityType.APPLICATION_MODAL);
 		dialog.getContentPane().setLayout(new BorderLayout());
-
+		dialog.pack();           // Tính toán kích thước nội dung
+		dialog.setSize(1000, 1000);
+		dialog.setResizable(false); // Không cho người dùng thay đổi kích thước
+		dialog.setLocationRelativeTo(null);
 		var formPanel = new AttendanceFormPanel(e -> {
 			JOptionPane.showMessageDialog(this,
 					"Đã xác nhận chấm công cho " + employeeName + " ngày " + formattedDate,
 					"Thông báo", JOptionPane.INFORMATION_MESSAGE);
 			dialog.dispose();
 		}, e -> dialog.dispose());
-
 		final var finalYear = year;
 		final var finalMonth = month;
-
 		formPanel.setOnDataChanged(() -> {
 			service.clearCache(finalYear, finalMonth);
 			updateTableHeaderAndData();
+			SwingUtilities.invokeLater(() -> {
+				if (table.getColumnCount() > 5) {
+					table.removeColumn(table.getColumnModel().getColumn(5));
+				}
+			});
 		});
 
 		// Gửi danh sách ca làm để hiển thị
 		var dayStatusList = service.getDayWorkStatus(employeeName, formattedDate);
 		formPanel.showEmployeeSchedule(empId,employeeName, formattedDate, dayStatusList);
 
-		dialog.getContentPane().add(formPanel, BorderLayout.CENTER);
-		dialog.setSize(420, 400);
+		formPanel.setPreferredSize(new Dimension(800, 600));
+		dialog.getContentPane().add(formPanel);
+		dialog.setSize(900, 700);
+		dialog.setMinimumSize(new Dimension(900, 700)); // tránh bị co lại
+		dialog.setResizable(false);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
+
+	}
+
+	private void renderRestaurant() {
+
+		try {
+			var restaurantService = new RestaurantService();
+			var restaurants = restaurantService.getAll();
+			resFilter.removeAllItems();
+			resFilter.addItem(new Restaurant(0, "Tất Cả Nhà Hàng", 0));
+			for (Restaurant r : restaurants) {
+				resFilter.addItem(r);
+			}
+			resFilter.setSelectedIndex(-1);
+			isInitializing = false;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(this,
+					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
+					"Lỗi", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 }

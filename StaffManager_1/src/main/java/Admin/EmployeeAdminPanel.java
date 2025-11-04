@@ -3,10 +3,12 @@ package Admin;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -248,15 +250,51 @@ public class EmployeeAdminPanel extends JPanel {
 	}
 
 	// ===== HELPER METHODS =====
-	public static  JButton createButton(String text, Color color, int width) {
-		var b = new JButton(text);
+	public static JButton createButton(String text, Color bg, int w) {
+		JButton b = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				var g2 = (Graphics2D) g;
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				// Hiệu ứng hover mượt hơn
+				var fillColor = bg;
+				if (getModel().isPressed()) {
+					fillColor = bg.darker();
+				} else if (getModel().isRollover()) {
+					fillColor = bg.brighter();
+				}
+
+				// Bo tròn góc
+				g2.setColor(fillColor);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+
+				// Viền nhẹ nếu muốn tinh tế hơn
+				g2.setColor(new Color(0, 0, 0, 20));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
+
+				// Vẽ text giữa nút
+				g2.setColor(Color.WHITE);
+				var fm = g2.getFontMetrics();
+				var textWidth = fm.stringWidth(getText());
+				var textHeight = fm.getAscent();
+				g2.drawString(getText(), (getWidth() - textWidth) / 2,
+						(getHeight() + textHeight - fm.getDescent()) / 2);
+			}
+		};
+
+		// Cấu hình cơ bản
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		b.setForeground(Color.WHITE);
-		b.setBackground(color);
-		b.setPreferredSize(new Dimension(width, 36));
+		b.setPreferredSize(new Dimension(w, 36));
+		b.setContentAreaFilled(false);
 		b.setBorderPainted(false);
 		b.setFocusPainted(false);
-		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		b.setRolloverEnabled(true);
+
+		// 👇 Thêm dòng này để con trỏ chuột đổi thành bàn tay khi hover
+		b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
 		return b;
 	}
 

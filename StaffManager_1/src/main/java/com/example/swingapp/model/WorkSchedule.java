@@ -17,6 +17,48 @@ public class WorkSchedule {
 	private double totalOt;
 	private Time checkInTime;
 	private Time checkOutTime;
+	private int getComeLate;
+	private int getEarlyLeave;
+
+	public int getGetComeLate() {
+		return getComeLate;
+	}
+
+	public void setGetComeLate(int getComeLate) {
+		this.getComeLate = getComeLate;
+	}
+
+	public int getGetEarlyLeave() {
+		return getEarlyLeave;
+	}
+
+	public void setGetEarlyLeave(int getEarlyLeave) {
+		this.getEarlyLeave = getEarlyLeave;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public void setShiftId(Integer shiftId) {
+		this.shiftId = shiftId;
+	}
+
+	public WorkSchedule(int id, int employeeId, int shiftId, Date workDate,
+			int getComeLate, int getEarlyLeave, int absentId,
+			double timeWork, double totalOt, Time checkInTime, Time checkOutTime) {
+		this.id = id;
+		this.employeeId = employeeId;
+		this.shiftId = shiftId;
+		this.workDate = workDate;
+		comeLate = comeLate;
+		earlyLeave = earlyLeave;
+		this.absentId = absentId;
+		this.timeWork = timeWork;
+		this.totalOt = totalOt;
+		this.checkInTime = checkInTime;
+		this.checkOutTime = checkOutTime;
+	}
 
 	public WorkSchedule() {}
 
