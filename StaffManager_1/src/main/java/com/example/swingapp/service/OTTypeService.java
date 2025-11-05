@@ -15,4 +15,7 @@ public class OTTypeService {
 	public OTType getById(int id) {
 		return dao.getById(id);
 	}
+	public List<OTType> getAllByWorkScheduleId(int workScheduleId){
+		return dao.getByWorkScheduleId(workScheduleId);
+	}
 }

@@ -83,4 +83,29 @@ public class OTTypeDAO implements BaseDAO<OTType> {
 		} catch (SQLException e) { e.printStackTrace(); }
 		return null;
 	}
+
+	public List<OTType> getByWorkScheduleId(int workScheduleId) {
+		List<OTType> list = new ArrayList<>();
+		var sql = """
+					select
+							ot.*
+					from tbl_ot_junction o
+					join tbl_ot_type ot on ot.id = o.ot_type_id
+					where work_schedule_id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var st = conn.prepareStatement(sql)){
+			st.setInt(1, workScheduleId);
+			var rs = st.executeQuery();
+			while (rs.next()) {
+				list.add(new OTType(
+						rs.getInt("id"),
+						rs.getString("ot_name"),
+						rs.getTime("ot_start"),
+						rs.getTime("ot_end")
+						));
+			}
+		} catch (SQLException e) { e.printStackTrace(); }
+		return list;
+	}
 }

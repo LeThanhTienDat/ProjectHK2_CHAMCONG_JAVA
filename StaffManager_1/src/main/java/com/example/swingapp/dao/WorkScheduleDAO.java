@@ -14,22 +14,13 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 	public boolean insert(WorkSchedule w) {
 		var sql =
 				"""
-				INSERT INTO tbl_work_schedule(\
-				employee_id, shift_id, work_date, come_late, early_leave, absent_id, \
-				time_work, total_ot, check_in_time, check_out_time) \
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+				INSERT INTO tbl_work_schedule(employee_id, shift_id, work_date)
+				VALUES (?, ?, ?)""";
 		try (var conn = DBConnection.getConnection();
 				var ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, w.getEmployeeId());
 			ps.setInt(2, w.getShiftId());
 			ps.setDate(3, w.getWorkDate());
-			ps.setBoolean(4, w.isComeLate());
-			ps.setBoolean(5, w.isEarlyLeave());
-			ps.setInt(6, w.getAbsentId());
-			ps.setDouble(7, w.getTimeWork());
-			ps.setDouble(8, w.getTotalOt());
-			ps.setTime(9, w.getCheckInTime());
-			ps.setTime(10, w.getCheckOutTime());
 			return ps.executeUpdate() > 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -159,6 +150,102 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 				}
 			}
 		} catch (SQLException e) { e.printStackTrace(); }
+		return null;
+	}
+	public boolean updateShift(int workScheduleId, int shiftId) {
+		var sql =
+				"""
+				UPDATE tbl_work_schedule
+				SET shift_id = ?
+				where id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, shiftId);
+			ps.setInt(2, workScheduleId);
+			return ps.executeUpdate() > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public boolean checkInShift(int workScheduleId) {
+		var info = getWorkDateAndTime(workScheduleId);
+		if (info == null) {
+			return false;
+		}
+		var workDate = (java.sql.Date) info[0];
+		var startTime = (java.sql.Time) info[2];
+		var checkInTime = workDate.toLocalDate().atTime(startTime.toLocalTime());
+		var sql =
+				"""
+				UPDATE tbl_work_schedule
+				SET check_in_time = ?
+				where id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setTimestamp(1, java.sql.Timestamp.valueOf(checkInTime));
+			ps.setInt(2, workScheduleId);
+			return ps.executeUpdate() > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	public boolean checkOutShift(int workScheduleId) {
+		var info = getWorkDateAndTime(workScheduleId);
+		if (info == null) {
+			return false;
+		}
+		var workDate = (java.sql.Date) info[0];
+		var endTime = (java.sql.Time) info[3];
+		var checkOutTime = workDate.toLocalDate().atTime(endTime.toLocalTime());
+		var sql =
+				"""
+				UPDATE tbl_work_schedule
+				SET check_out_time = ?
+				where id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setTimestamp(1, java.sql.Timestamp.valueOf(checkOutTime));
+			ps.setInt(2, workScheduleId);
+			return ps.executeUpdate() > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	public Object[] getWorkDateAndTime(int workScheduleId) {
+		var sql = """
+				    SELECT ws.work_date, s.shift_name, s.start_time, s.end_time
+				    FROM tbl_Work_Schedule ws
+				    JOIN tbl_Shift s ON ws.shift_id = s.id
+				    WHERE ws.id = ?
+				""";
+		try (
+				var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql);
+				) {
+			ps.setInt(1, workScheduleId);
+			var rs = ps.executeQuery();
+
+			if (rs.next()) {
+				var getShiftInfo = new Object[] {
+						rs.getDate("work_date"),
+						rs.getString("shift_name"),
+						rs.getTime("start_time"),
+						rs.getTime("end_time")
+				};
+				return getShiftInfo;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		return null;
 	}
 }

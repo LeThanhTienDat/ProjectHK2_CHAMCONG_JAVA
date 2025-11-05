@@ -16,6 +16,7 @@ import java.time.Duration;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -23,6 +24,7 @@ import javax.swing.border.LineBorder;
 
 import com.example.swingapp.model.Shift;
 import com.example.swingapp.model.WorkSchedule;
+import com.example.swingapp.service.WorkScheduleService;
 
 public class ShiftDetailsPanel extends JPanel {
 
@@ -33,7 +35,14 @@ public class ShiftDetailsPanel extends JPanel {
 	private static final Color LIGHT_RED = new Color(255, 235, 238);  // trễ / sớm
 	private Color inBg;
 	private Color outBg;
-	public ShiftDetailsPanel(WorkSchedule ws, String shiftFullName, Shift shift) {
+
+	private AttendanceFormPanel parent;
+	private WorkSchedule workSchedule;
+	private final WorkScheduleService workScheduleService = new WorkScheduleService();
+
+	public ShiftDetailsPanel(WorkSchedule ws, String shiftFullName, Shift shift, AttendanceFormPanel getParent) {
+		workSchedule = ws;
+		parent = getParent;
 		setLayout(new GridBagLayout());
 		setBackground(Color.WHITE);
 		setBorder(new CompoundBorder(
@@ -46,7 +55,7 @@ public class ShiftDetailsPanel extends JPanel {
 		gbc.gridy = 0;
 
 		// ========== CỘT 1 ==========
-		var statusText = ws.getCheckInTime() != null ? "Đã chấm công" : "Chưa IN";
+		var statusText = ws.getCheckInTime() != null ? "Đã chấm công" : "Chưa chấm công";
 		var shiftLabel = new JLabel("<html><b>Ca Chính:</b> " + shiftFullName + "<br><i>" + statusText + "</i></html>");
 		shiftLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		shiftLabel.setForeground(PRIMARY_BLUE.darker());
@@ -86,9 +95,39 @@ public class ShiftDetailsPanel extends JPanel {
 		shiftInLabel.setForeground(new Color(80, 120, 180));
 
 		var btnCheckIn = button("Check in", PRIMARY_BLUE,110);
-		btnCheckIn.setEnabled(actualInStr == null);
+		btnCheckIn.setEnabled(actualIn == null);
 		btnCheckIn.addActionListener(e -> {
-			System.out.println("Chấm công OUT cho OT ID: " + shift.getId());
+			try {
+				var workScheduleId = workSchedule.getId();
+				if (workScheduleId <= 0) {
+					JOptionPane.showMessageDialog(this, "Không tìm thấy ca làm hợp lệ!");
+					return;
+				}
+
+				var confirm = JOptionPane.showConfirmDialog(
+						this,
+						"Bạn có chắc chắn muốn check in ca làm này?",
+						"Xác nhận check-in",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE
+						);
+
+				if (confirm != JOptionPane.YES_OPTION) {
+					return;
+				}
+
+				var success = workScheduleService.checkInShift(workScheduleId);
+				if (success) {
+					JOptionPane.showMessageDialog(this, "Check-in thành công!");
+					parent.reloadForm();
+				} else {
+					JOptionPane.showMessageDialog(this, "Check-in thất bại! Vui lòng thử lại.");
+				}
+
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi check-in!");
+			}
 		});
 
 		var actualInLabel = new JLabel("Check in thực tế: " + actualInStr + " " + inNote);
@@ -145,7 +184,37 @@ public class ShiftDetailsPanel extends JPanel {
 		var btnCheckOut = button("Check out", PRIMARY_BLUE,110);
 		btnCheckOut.setEnabled(actualOut == null);
 		btnCheckOut.addActionListener(e -> {
-			System.out.println("Chấm công OUT cho OT ID: " + shift.getId());
+			try {
+				var workScheduleId = workSchedule.getId();
+				if (workScheduleId <= 0) {
+					JOptionPane.showMessageDialog(this, "Không tìm thấy ca làm hợp lệ!");
+					return;
+				}
+
+				var confirm = JOptionPane.showConfirmDialog(
+						this,
+						"Bạn có chắc chắn muốn check out ca làm này?",
+						"Xác nhận check-out",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE
+						);
+
+				if (confirm != JOptionPane.YES_OPTION) {
+					return;
+				}
+
+				var success = workScheduleService.checkOutShift(workScheduleId);
+				if (success) {
+					JOptionPane.showMessageDialog(this, "Check-out thành công!");
+					parent.reloadForm();
+				} else {
+					JOptionPane.showMessageDialog(this, "Check-out thất bại! Vui lòng thử lại.");
+				}
+
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi check-out!");
+			}
 		});
 
 		var actualOutLabel = new JLabel("Check out thực tế: " + actualOutStr + " " + outNote);
@@ -229,11 +298,15 @@ public class ShiftDetailsPanel extends JPanel {
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 				// Hiệu ứng hover mượt hơn
-				var fillColor = bg;
-				if (getModel().isPressed()) {
-					fillColor = bg.darker();
-				} else if (getModel().isRollover()) {
-					fillColor = bg.brighter();
+				var disabledColor = new Color(200, 200, 200); // màu xám nhạt khi disabled
+				var fillColor = isEnabled() ? bg : disabledColor;
+
+				if (isEnabled()) {
+					if (getModel().isPressed()) {
+						fillColor = bg.darker();
+					} else if (getModel().isRollover()) {
+						fillColor = bg.brighter();
+					}
 				}
 
 				// Bo tròn góc

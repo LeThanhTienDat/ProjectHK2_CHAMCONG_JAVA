@@ -15,6 +15,7 @@ import java.time.Duration;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -24,6 +25,7 @@ import com.example.swingapp.model.OTJunction;
 import com.example.swingapp.model.OTType;
 import com.example.swingapp.model.Shift;
 import com.example.swingapp.model.WorkSchedule;
+import com.example.swingapp.service.OTJunctionService;
 
 public class OtDetailsPanel extends JPanel {
 
@@ -34,7 +36,8 @@ public class OtDetailsPanel extends JPanel {
 	private static final Color LIGHT_RED = new Color(255, 235, 238);  // trễ / sớm
 	private Color inBg;
 	private Color outBg;
-	public OtDetailsPanel(WorkSchedule ws, String shiftFullName, Shift shift, OTJunction ot, OTType otType) {
+	private final OTJunctionService otJunctionService = new OTJunctionService();
+	public OtDetailsPanel(WorkSchedule ws, String shiftFullName, Shift shift, OTJunction ot, OTType otType, AttendanceFormPanel parent) {
 		setLayout(new GridBagLayout());
 		setBackground(Color.WHITE);
 		setBorder(new CompoundBorder(
@@ -95,7 +98,25 @@ public class OtDetailsPanel extends JPanel {
 		var btnCheckIn = button("Check in", PRIMARY_BLUE,110);
 		btnCheckIn.setEnabled(actualIn == null);
 		btnCheckIn.addActionListener(e -> {
-			System.out.println("Chấm công IN cho OT ID: " + ot.getId());
+			var workScheduleId = ws.getId();
+			var otTypeId = otType.getId();
+			var confirm = JOptionPane.showConfirmDialog(
+					this,
+					"Bạn có chắc chắn muốn Check-in ca OT này?",
+					"Xác nhận Check-in OT",
+					JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE
+					);
+
+			if (confirm == JOptionPane.YES_OPTION) {
+				var success = otJunctionService.checkInOt(workScheduleId, otTypeId);
+				if (success) {
+					JOptionPane.showMessageDialog(this, "Check-in OT thành công!");
+					parent.reloadForm();
+				} else {
+					JOptionPane.showMessageDialog(this, "Check-in thất bại!");
+				}
+			}
 		});
 
 		var inPanel = new JPanel(new GridLayout(3, 1, 0, 4)) {
@@ -148,7 +169,25 @@ public class OtDetailsPanel extends JPanel {
 		var btnCheckOut = button("Check out", PRIMARY_BLUE,110);
 		btnCheckOut.setEnabled(actualOut == null);
 		btnCheckOut.addActionListener(e -> {
-			System.out.println("Chấm công OUT cho OT ID: " + ot.getId());
+			var workScheduleId = ws.getId();
+			var otTypeId = otType.getId();
+			var confirm = JOptionPane.showConfirmDialog(
+					this,
+					"Bạn có chắc chắn muốn Check-out ca OT này?",
+					"Xác nhận Check-out OT",
+					JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE
+					);
+
+			if (confirm == JOptionPane.YES_OPTION) {
+				var success = otJunctionService.checkOutOt(workScheduleId, otTypeId);
+				if (success) {
+					JOptionPane.showMessageDialog(this, "Check-out OT thành công!");
+					parent.reloadForm();
+				} else {
+					JOptionPane.showMessageDialog(this, "Check-out thất bại!");
+				}
+			}
 		});
 
 		var actualOutLabel = new JLabel("Check out thực tế: " + actualOutStr + " " + outNote);
@@ -232,11 +271,15 @@ public class OtDetailsPanel extends JPanel {
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 				// Hiệu ứng hover mượt hơn
-				var fillColor = bg;
-				if (getModel().isPressed()) {
-					fillColor = bg.darker();
-				} else if (getModel().isRollover()) {
-					fillColor = bg.brighter();
+				var disabledColor = new Color(200, 200, 200); // màu xám nhạt khi disabled
+				var fillColor = isEnabled() ? bg : disabledColor;
+
+				if (isEnabled()) {
+					if (getModel().isPressed()) {
+						fillColor = bg.darker();
+					} else if (getModel().isRollover()) {
+						fillColor = bg.brighter();
+					}
 				}
 
 				// Bo tròn góc

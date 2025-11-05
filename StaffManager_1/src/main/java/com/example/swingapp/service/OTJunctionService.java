@@ -38,5 +38,11 @@ public class OTJunctionService {
 				.findFirst()
 				.orElse(null);
 	}
+	public boolean checkInOt(int workScheduleId, int otTypeId) {
+		return dao.checkInOt(workScheduleId, otTypeId);
+	}
+	public boolean checkOutOt(int workScheduleId, int otTypeId) {
+		return dao.checkOutOt(workScheduleId, otTypeId);
+	}
 
 }

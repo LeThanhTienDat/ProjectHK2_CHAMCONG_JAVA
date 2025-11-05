@@ -220,6 +220,31 @@ public class AttendanceDAO {
 		return id;
 	}
 
+	public int hasShiftId(int employeeId, String currentDate) {
+		var id = 0;
+		var sql = """
+					select ws.id
+					from tbl_Work_Schedule ws
+					where employee_id = ? and work_date = ? and (shift_id != null or shift_id != 0)
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, employeeId);
+			ps.setString(2, currentDate);
+			try (var rs = ps.executeQuery()) {
+				while (rs.next()) {
+					id = rs.getInt("id");
+				}
+			}
+
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return id;
+	}
+
+
+
 	public WorkSchedule getWorkScheduleByIdDate(int employeeId, String currentDate) {
 		var item = new WorkSchedule();
 		var sql = """

@@ -1,5 +1,6 @@
 package com.example.swingapp.service;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -85,7 +86,7 @@ public class AttendanceService {
 
 			var employeeId = (int) emp[0];
 			var works = workMap.getOrDefault(employeeId, List.of());
-
+			System.out.println("Kiểm tra works: "+works);
 			var totalLate = 0;
 			var totalEarly = 0;
 			var totalLeave = 0;
@@ -104,19 +105,19 @@ public class AttendanceService {
 			for (var entry : dayMap.entrySet()) {
 				int day = entry.getKey();
 				var colIndex = 5 + (day - 1);
-				var dayRecords = entry.getValue();
+				var record = entry.getValue().get(0); // chỉ có 1 record duy nhất
 
-				var checkedCount = dayRecords.stream()
-						.filter(r -> r[5] != null && r[6] != null) // check_in_time && check_out_time
-						.count();
-				var totalCount = dayRecords.size();
+				var checkIn = (Timestamp) record[5];
+				var checkOut = (Timestamp) record[6];
 
-				if (checkedCount == 0) {
+				System.out.println(">> " + record[1] + " | checkIn=" + checkIn + " | checkOut=" + checkOut);
+
+				if (checkIn == null && checkOut == null) {
 					row[colIndex] = "*"; // chưa check-in/out ca nào
-				} else if (checkedCount == totalCount) {
-					row[colIndex] = "X"; // tất cả ca đã check-in/out
+				} else if (checkIn != null && checkOut != null) {
+					row[colIndex] = "X"; // đã đủ cả hai
 				} else {
-					row[colIndex] = "V"; // có check-in/out nhưng chưa đủ tất cả
+					row[colIndex] = "V"; // có 1 trong 2 bị thiếu
 				}
 			}
 			row[totalCols - 4] = totalLate;
@@ -233,6 +234,9 @@ public class AttendanceService {
 	}
 	public int checkWorkScheduleId(int employeeId, String currentDate) {
 		return dao.hasWorkSchedule(employeeId, currentDate);
+	}
+	public int checkShiftId(int employeeId, String currentDate) {
+		return dao.hasShiftId(employeeId, currentDate);
 	}
 	public WorkSchedule getWorkSheduleByIdDate(int employee_id, String currentDate ) {
 		return dao.getWorkScheduleByIdDate(employee_id, currentDate);

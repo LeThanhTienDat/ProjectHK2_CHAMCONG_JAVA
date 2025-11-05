@@ -15,6 +15,9 @@ public class WorkScheduleService {
 	public boolean add(WorkSchedule w) {
 		return dao.insert(w);
 	}
+	public boolean addShift(int workScheduleId, int shiftId) {
+		return dao.updateShift(workScheduleId, shiftId);
+	}
 
 	public boolean update(WorkSchedule w) {
 		return dao.update(w);
@@ -28,5 +31,14 @@ public class WorkScheduleService {
 	}
 	public WorkSchedule getById (int id) {
 		return dao.getById(id);
+	}
+	public boolean checkInShift(int workScheduleId) {
+		return dao.checkInShift(workScheduleId);
+	}
+	public boolean checkOutShift(int workScheduleId) {
+		return dao.checkOutShift(workScheduleId);
+	}
+	public Object[] getWorkDateAndTime(int workScheduleId) {
+		return dao.getWorkDateAndTime(workScheduleId);
 	}
 }

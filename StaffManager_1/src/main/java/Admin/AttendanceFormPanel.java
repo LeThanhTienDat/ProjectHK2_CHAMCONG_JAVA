@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionListener;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -53,13 +56,17 @@ public class AttendanceFormPanel extends JPanel {
 
 	private final WorkScheduleService workScheduleService = new WorkScheduleService();
 	private final OTJunctionService otJunctionService = new OTJunctionService();
+	private final OTTypeService otTypeService = new OTTypeService();
 	private int currentEmployeeId;
 
 	public void setOnDataChanged(Runnable r) {
 		onDataChanged = r;
 	}
-
 	public AttendanceFormPanel(ActionListener onSave, ActionListener onCancel) {
+		initUI(onSave, onCancel);
+	}
+
+	public void initUI(ActionListener onSave, ActionListener onCancel) {
 		setOpaque(false);
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(10, 25, 10, 25));
@@ -67,10 +74,10 @@ public class AttendanceFormPanel extends JPanel {
 		var addPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
 		addPanel.setOpaque(false);
 
-		btnAddShift = button("Thêm ca làm", PRIMARY_BLUE);
+		btnAddShift = createButton("Thêm ca làm", PRIMARY_BLUE, 110);
 		btnAddShift.addActionListener(e -> onAddShift());
 
-		btnAddOT = button("Thêm OT", PRIMARY_BLUE);
+		btnAddOT = createButton("Thêm OT", PRIMARY_BLUE, 110);
 		btnAddOT.addActionListener(e -> onAddOT());
 
 		addPanel.add(btnAddShift);
@@ -97,12 +104,12 @@ public class AttendanceFormPanel extends JPanel {
 
 		var actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actions.setOpaque(false);
-		btnCancel = button("Hủy", DANGER_RED);
-		btnSave = button("Lưu", PRIMARY_BLUE);
+		btnCancel = createButton("Đóng", DANGER_RED,110);
+		btnSave = createButton("Lưu", PRIMARY_BLUE,110);
 		btnSave.addActionListener(onSave);
 		btnCancel.addActionListener(onCancel);
 		actions.add(btnCancel);
-		actions.add(btnSave);
+		//		actions.add(btnSave);
 
 		var centerPanel = new JPanel(new BorderLayout());
 		centerPanel.setOpaque(false);
@@ -116,44 +123,119 @@ public class AttendanceFormPanel extends JPanel {
 	// --- Separate logic methods (để WindowBuilder không lỗi lambda)
 	public void onAddShift() {
 		var checkWorkSchedule = service.checkWorkScheduleId(currentEmployeeId, currentDate);
-		if(checkWorkSchedule > 0) {
+		var checkShift = service.checkShiftId(currentEmployeeId, currentDate);
+		var shiftTypes = new ShiftService().getAll();
+
+		if(checkWorkSchedule > 0 && checkShift >0) {
 			JOptionPane.showMessageDialog(this, "Ca làm đã tồn tại!");
 			return;
-		}
-		var shiftTypes = new ShiftService().getAll();
-		showAddDialog("ca làm", shiftTypes,
-				s -> s.getShiftName() + " (" + s.getStartTime() + " - " + s.getEndTime() + ")",
-				selectedShift -> {
-					try {
-						var workSchedule = new com.example.swingapp.model.WorkSchedule();
-						workSchedule.setEmployeeId(currentEmployeeId);
-						workSchedule.setShiftId(selectedShift.getId());
-						workSchedule.setWorkDate(java.sql.Date.valueOf(currentDate));
-						var success = workScheduleService.add(workSchedule);
-						if (success) {
-							JOptionPane.showMessageDialog(this, "Thêm ca làm thành công!");
-							var dateObj = java.time.LocalDate.parse(currentDate);
-							service.clearCache(dateObj.getYear(), dateObj.getMonthValue());
-							var newStatus = new DayWorkStatus(
-									selectedShift.getShiftName() + " (" + selectedShift.getStartTime() + " - " + selectedShift.getEndTime() + ")", false);
-							var workScheduleInfo = service.getWorkSheduleByIdDate(currentEmployeeId, currentDate);
-							shiftListPanel.add(Box.createVerticalStrut(10), 1);
-							shiftListPanel.setAlignmentY(TOP_ALIGNMENT);
-							shiftListPanel.add(createShiftPanel(newStatus, workScheduleInfo), 1);
-							shiftListPanel.revalidate();
-							shiftListPanel.repaint();
+		}else if(checkWorkSchedule > 0 && checkShift == 0){
+			var currentOtList = otTypeService.getAllByWorkScheduleId(checkWorkSchedule);
+			if (currentOtList != null && !currentOtList.isEmpty()) {
+				shiftTypes.removeIf(shift -> {
+					var shiftStart = shift.getStartTime().toLocalTime();
+					var shiftEnd = shift.getEndTime().toLocalTime();
 
-							if (onDataChanged != null) {
-								onDataChanged.run();
-							}
-						} else {
-							JOptionPane.showMessageDialog(this, "Thêm ca làm thất bại!");
+					for (var ot : currentOtList) {
+						var otStart = ot.getOtStart().toLocalTime();
+						var otEnd = ot.getOtEnd().toLocalTime();
+
+						// Nếu giao nhau về thời gian
+						var overlap = shiftStart.isBefore(otEnd) && shiftEnd.isAfter(otStart);
+						if (overlap) {
+							return true; // loại bỏ ca này
 						}
-					} catch (Exception ex) {
-						ex.printStackTrace();
-						JOptionPane.showMessageDialog(this, "Lỗi khi thêm ca làm!");
 					}
+
+					return false; // giữ lại ca hợp lệ
 				});
+			}
+			showAddDialog("ca làm", shiftTypes,
+					s -> s.getShiftName() + " (" + s.getStartTime() + " - " + s.getEndTime() + ")",
+					selectedShift -> {
+						try {
+							var success = workScheduleService.addShift(checkWorkSchedule, selectedShift.getId());
+							if (success) {
+								JOptionPane.showMessageDialog(this, "Thêm ca làm thành công!");
+								var dateObj = java.time.LocalDate.parse(currentDate);
+								service.clearCache(dateObj.getYear(), dateObj.getMonthValue());
+								var newStatus = new DayWorkStatus(
+										selectedShift.getShiftName() + " (" + selectedShift.getStartTime() + " - " + selectedShift.getEndTime() + ")", false);
+								var workScheduleInfo = service.getWorkSheduleByIdDate(currentEmployeeId, currentDate);
+								shiftListPanel.add(Box.createVerticalStrut(10), 1);
+								shiftListPanel.setAlignmentY(TOP_ALIGNMENT);
+								shiftListPanel.add(createShiftPanel(newStatus, workScheduleInfo), 1);
+								shiftListPanel.revalidate();
+								shiftListPanel.repaint();
+
+								if (onDataChanged != null) {
+									onDataChanged.run();
+								}
+							} else {
+								JOptionPane.showMessageDialog(this, "Thêm ca làm thất bại!");
+							}
+						} catch (Exception ex) {
+							ex.printStackTrace();
+							JOptionPane.showMessageDialog(this, "Lỗi khi thêm ca làm!");
+						}
+					});
+		}else {
+			var currentOtList = otTypeService.getAllByWorkScheduleId(checkWorkSchedule);
+			if (currentOtList != null && !currentOtList.isEmpty()) {
+				shiftTypes.removeIf(shift -> {
+					var shiftStart = shift.getStartTime().toLocalTime();
+					var shiftEnd = shift.getEndTime().toLocalTime();
+
+					for (var ot : currentOtList) {
+						var otStart = ot.getOtStart().toLocalTime();
+						var otEnd = ot.getOtEnd().toLocalTime();
+
+						// Nếu giao nhau về thời gian
+						var overlap = shiftStart.isBefore(otEnd) && shiftEnd.isAfter(otStart);
+						if (overlap) {
+							return true; // loại bỏ ca này
+						}
+					}
+
+					return false; // giữ lại ca hợp lệ
+				});
+			}
+			showAddDialog("ca làm", shiftTypes,
+					s -> s.getShiftName() + " (" + s.getStartTime() + " - " + s.getEndTime() + ")",
+					selectedShift -> {
+						try {
+							var workSchedule = new com.example.swingapp.model.WorkSchedule();
+							workSchedule.setEmployeeId(currentEmployeeId);
+							workSchedule.setShiftId(selectedShift.getId());
+							workSchedule.setWorkDate(java.sql.Date.valueOf(currentDate));
+							var success = workScheduleService.add(workSchedule);
+							if (success) {
+								JOptionPane.showMessageDialog(this, "Thêm ca làm thành công!");
+								var dateObj = java.time.LocalDate.parse(currentDate);
+								service.clearCache(dateObj.getYear(), dateObj.getMonthValue());
+								var newStatus = new DayWorkStatus(
+										selectedShift.getShiftName() + " (" + selectedShift.getStartTime() + " - " + selectedShift.getEndTime() + ")", false);
+								var workScheduleInfo = service.getWorkSheduleByIdDate(currentEmployeeId, currentDate);
+								shiftListPanel.add(Box.createVerticalStrut(10), 1);
+								shiftListPanel.setAlignmentY(TOP_ALIGNMENT);
+								shiftListPanel.add(createShiftPanel(newStatus, workScheduleInfo), 1);
+								shiftListPanel.revalidate();
+								shiftListPanel.repaint();
+
+								if (onDataChanged != null) {
+									onDataChanged.run();
+								}
+							} else {
+								JOptionPane.showMessageDialog(this, "Thêm ca làm thất bại!");
+							}
+						} catch (Exception ex) {
+							ex.printStackTrace();
+							JOptionPane.showMessageDialog(this, "Lỗi khi thêm ca làm!");
+						}
+					});
+		}
+
+
 	}
 
 	public void onAddOT() {
@@ -166,7 +248,7 @@ public class AttendanceFormPanel extends JPanel {
 		var shiftId = 0;
 		Shift shiftInfo = null;
 		if (workScheduleInfo != null) {
-			shiftId = workScheduleInfo.getShiftId();
+			shiftId = workScheduleInfo.getShiftId() != null ? workScheduleInfo.getShiftId() : 0 ;
 		}
 		if (shiftId > 0) {
 			var shiftService = new ShiftService();
@@ -329,7 +411,7 @@ public class AttendanceFormPanel extends JPanel {
 
 		var ws = new WorkScheduleDAO().getById(ot.getWorkScheduleId());
 		var otDetailsPanel = new OtDetailsPanel(ws, otFullName,
-				new ShiftService().getById(ws.getShiftId()),ot, otType);
+				new ShiftService().getById(ws.getShiftId()),ot, otType, this);
 
 		// Giữ kích thước đồng nhất với ca làm
 		var fixedSize = new Dimension(817, 150);
@@ -379,7 +461,7 @@ public class AttendanceFormPanel extends JPanel {
 
 		};
 
-		var shiftPanel = new ShiftDetailsPanel(ws, shiftFullName, shift);
+		var shiftPanel = new ShiftDetailsPanel(ws, shiftFullName, shift, this);
 
 		// 👉 Giữ kích thước cố định cho mỗi ca làm
 		var fixedSize = new Dimension(817, 150);
@@ -396,14 +478,39 @@ public class AttendanceFormPanel extends JPanel {
 		return (idx > 0) ? fullName.substring(0, idx) : fullName;
 	}
 
-	public static JButton button(String text, Color bg) {
-		var b = new JButton(text);
+	public static JButton createButton(String text, Color bg, int w) {
+		JButton b = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				var g2 = (Graphics2D) g;
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				var fillColor = bg;
+				if (getModel().isPressed()) {
+					fillColor = bg.darker();
+				} else if (getModel().isRollover()) {
+					fillColor = bg.brighter();
+				}
+				g2.setColor(fillColor);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+				g2.setColor(new Color(0, 0, 0, 20));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
+				g2.setColor(Color.WHITE);
+				var fm = g2.getFontMetrics();
+				var textWidth = fm.stringWidth(getText());
+				var textHeight = fm.getAscent();
+				g2.drawString(getText(), (getWidth() - textWidth) / 2,
+						(getHeight() + textHeight - fm.getDescent()) / 2);
+			}
+		};
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		b.setForeground(Color.WHITE);
-		b.setBackground(bg);
-		b.setFocusPainted(false);
+		b.setPreferredSize(new Dimension(w, 36));
+		b.setContentAreaFilled(false);
 		b.setBorderPainted(false);
-		b.setPreferredSize(new Dimension(130, 36));
+		b.setFocusPainted(false);
+		b.setRolloverEnabled(true);
+		b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 		return b;
 	}
 
@@ -415,7 +522,7 @@ public class AttendanceFormPanel extends JPanel {
 		}
 
 		if (items == null || items.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Chưa có mục nào để chọn!");
+			JOptionPane.showMessageDialog(this, "Hiện không có ca làm phù hợp, xin kiểm tra lại ca Ot!");
 			return;
 		}
 
@@ -466,6 +573,18 @@ public class AttendanceFormPanel extends JPanel {
 			shiftListPanel.removeAll();
 			showEmployeeSchedule(currentEmployeeId, currentEmployeeName, currentDate,
 					service.getDayWorkStatus(currentEmployeeName, currentDate));
+		}
+	}
+
+	public void reloadForm() {
+		removeAll();
+		initUI(btnSave.getActionListeners()[0], btnCancel.getActionListeners()[0]);
+
+		if (currentEmployeeId > 0 && currentDate != null && currentEmployeeName != null) {
+			var dayStatusList = service.getDayWorkStatus(currentEmployeeName, currentDate);
+			showEmployeeSchedule(currentEmployeeId, currentEmployeeName, currentDate, dayStatusList);
+			revalidate();
+			repaint();
 		}
 	}
 }

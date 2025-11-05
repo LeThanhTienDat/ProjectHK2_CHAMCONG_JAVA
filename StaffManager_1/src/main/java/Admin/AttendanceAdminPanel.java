@@ -11,6 +11,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.text.MessageFormat;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,15 +112,15 @@ public class AttendanceAdminPanel extends JPanel {
 
 		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 300);
 		txtSearch.setColumns(30);
-		txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-			@Override
-			public void insertUpdate(javax.swing.event.DocumentEvent e) { update(); }
-			@Override
-			public void removeUpdate(javax.swing.event.DocumentEvent e) { update(); }
-			@Override
-			public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
-			private void update() { SwingUtilities.invokeLater(() -> updateTableHeaderAndData()); }
-		});
+		//		txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+		//			@Override
+		//			public void insertUpdate(javax.swing.event.DocumentEvent e) { update(); }
+		//			@Override
+		//			public void removeUpdate(javax.swing.event.DocumentEvent e) { update(); }
+		//			@Override
+		//			public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
+		//			private void update() { SwingUtilities.invokeLater(() -> updateTableHeaderAndData()); }
+		//		});
 
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
 		btnSearch.addActionListener(e -> updateTableHeaderAndData());
@@ -159,8 +160,7 @@ public class AttendanceAdminPanel extends JPanel {
 		if (query == null) {
 			query = "";
 		}
-		query = query.trim().toLowerCase();
-		if (query.isEmpty() || "tìm kiếm theo tên nhân viên...".equals(query)) {
+		if (query.isEmpty() || "tìm kiếm theo tên nhân viên...".equalsIgnoreCase(query)) {
 			query = null;
 		}
 		List<Object[]> displayData = new ArrayList<>();
@@ -184,11 +184,9 @@ public class AttendanceAdminPanel extends JPanel {
 
 
 			if (query != null && !query.isEmpty()) {
-				var name = row[2] != null ? row[2].toString().toLowerCase() : "";
-				if (!name.contains(query.toLowerCase())) {
-					for (var i = 5; i < tmp.length; i++) {
-						tmp[i] = tmp[i] != null ? tmp[i].toString().toUpperCase() : "";
-					}
+				var employeeName = row[2] != null ? normalizeString(row[2].toString()) : "";
+				if (!employeeName.contains(query)) {
+					continue;
 				}
 			}
 			displayData.add(tmp);
@@ -196,6 +194,11 @@ public class AttendanceAdminPanel extends JPanel {
 
 
 		SwingUtilities.invokeLater(() -> {
+			if (!displayData.isEmpty()) {
+				System.out.println("🔹 Dòng đầu tiên trong displayData: " + Arrays.toString(displayData.get(0)));
+			} else {
+				System.out.println("⚠️ displayData đang trống!");
+			}
 			model.setDataVector(displayData.toArray(new Object[0][]), headers.toArray());
 			autoResizeColumns(table);
 			// 🧹 Xóa cột restaurant_id ra khỏi bảng hiển thị
@@ -819,5 +822,15 @@ public class AttendanceAdminPanel extends JPanel {
 					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
 					"Lỗi", JOptionPane.ERROR_MESSAGE);
 		}
+	}
+
+	private String normalizeString(String input) {
+		if (input == null) {
+			return "";
+		}
+		var normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+		// Loại bỏ các ký tự dấu
+		normalized = normalized.replaceAll("\\p{M}", "");
+		return normalized.toLowerCase();
 	}
 }

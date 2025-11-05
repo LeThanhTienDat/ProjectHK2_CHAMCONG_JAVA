@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.swingapp.model.OTJunction;
+import com.example.swingapp.model.OTType;
+import com.example.swingapp.service.WorkScheduleService;
 import com.example.swingapp.util.DBConnection;
 
 public class OTJunctionDAO implements BaseDAO<OTJunction> {
@@ -103,4 +105,86 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 		}
 		return list;
 	}
+
+	public boolean checkInOt(int workScheduleId, int otTypeId) {
+		var workScheduleService = new WorkScheduleService();
+		var info = workScheduleService.getWorkDateAndTime(workScheduleId);
+		if (info == null) {
+			return false;
+		}
+		var otInfo = this.getOtTime(otTypeId);
+
+		var workDate = (java.sql.Date) info[0];
+		var inTime = otInfo.getOtStart();
+		var checkInTime = workDate.toLocalDate().atTime(inTime.toLocalTime());
+		var sql =
+				"""
+				UPDATE tbl_Ot_Junction
+				SET ot_check_in_time = ?
+				where work_schedule_id = ? and ot_type_id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setTimestamp(1, java.sql.Timestamp.valueOf(checkInTime));
+			ps.setInt(2, workScheduleId);
+			ps.setInt(3, otTypeId);
+			return ps.executeUpdate() > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	public boolean checkOutOt(int workScheduleId, int otTypeId) {
+		var workScheduleService = new WorkScheduleService();
+		var info = workScheduleService.getWorkDateAndTime(workScheduleId);
+		if (info == null) {
+			return false;
+		}
+		var otInfo = this.getOtTime(otTypeId);
+
+		var workDate = (java.sql.Date) info[0];
+		var outTime = otInfo.getOtEnd();
+		var checkOutTime = workDate.toLocalDate().atTime(outTime.toLocalTime());
+		var sql =
+				"""
+				UPDATE tbl_Ot_Junction
+				SET ot_check_out_time = ?
+				where work_schedule_id = ? and ot_type_id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setTimestamp(1, java.sql.Timestamp.valueOf(checkOutTime));
+			ps.setInt(2, workScheduleId);
+			ps.setInt(3, otTypeId);
+			return ps.executeUpdate() > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	public OTType getOtTime(int ot_type_id) {
+		var otTime = new OTType();
+		var sql =
+				"""
+				SELECT o.*
+				FROM tbl_Ot_Type o
+				where id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, ot_type_id);
+			var rs = ps.executeQuery();
+			while (rs.next()) {
+				otTime.setId(rs.getInt("id"));
+				otTime.setOtName(rs.getString("ot_name"));
+				otTime.setOtStart(rs.getTime("ot_start"));
+				otTime.setOtEnd(rs.getTime("ot_end"));
+			}
+			return otTime;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 }
