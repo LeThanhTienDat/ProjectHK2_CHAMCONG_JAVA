@@ -120,6 +120,7 @@ public class ShiftDetailsPanel extends JPanel {
 				if (success) {
 					JOptionPane.showMessageDialog(this, "Check-in thành công!");
 					parent.reloadForm();
+					parent.notifyDataChanged();
 				} else {
 					JOptionPane.showMessageDialog(this, "Check-in thất bại! Vui lòng thử lại.");
 				}
@@ -207,6 +208,7 @@ public class ShiftDetailsPanel extends JPanel {
 				if (success) {
 					JOptionPane.showMessageDialog(this, "Check-out thành công!");
 					parent.reloadForm();
+					parent.notifyDataChanged();
 				} else {
 					JOptionPane.showMessageDialog(this, "Check-out thất bại! Vui lòng thử lại.");
 				}

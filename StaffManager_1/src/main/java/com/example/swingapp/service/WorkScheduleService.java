@@ -41,4 +41,7 @@ public class WorkScheduleService {
 	public Object[] getWorkDateAndTime(int workScheduleId) {
 		return dao.getWorkDateAndTime(workScheduleId);
 	}
+	public Object[] getWorkDate(int workScheduleId) {
+		return dao.getWorkDate(workScheduleId);
+	}
 }

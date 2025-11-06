@@ -108,7 +108,7 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 
 	public boolean checkInOt(int workScheduleId, int otTypeId) {
 		var workScheduleService = new WorkScheduleService();
-		var info = workScheduleService.getWorkDateAndTime(workScheduleId);
+		var info = workScheduleService.getWorkDate(workScheduleId);
 		if (info == null) {
 			return false;
 		}
@@ -117,6 +117,7 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 		var workDate = (java.sql.Date) info[0];
 		var inTime = otInfo.getOtStart();
 		var checkInTime = workDate.toLocalDate().atTime(inTime.toLocalTime());
+		System.out.println("Kiểm tra checkInType: "+checkInTime);
 		var sql =
 				"""
 				UPDATE tbl_Ot_Junction
@@ -136,7 +137,7 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 	}
 	public boolean checkOutOt(int workScheduleId, int otTypeId) {
 		var workScheduleService = new WorkScheduleService();
-		var info = workScheduleService.getWorkDateAndTime(workScheduleId);
+		var info = workScheduleService.getWorkDate(workScheduleId);
 		if (info == null) {
 			return false;
 		}
@@ -186,5 +187,86 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 			return null;
 		}
 	}
+	public List<Object[]> getFullOtByWorkScheduleId(int workScheduleId){
+		List<Object[]> list = new ArrayList<>();
+		var sql =
+				"""
+				SELECT 	o.*,
+						ot.ot_name,
+						ot.ot_start,
+						ot.ot_end,
+						ot.active
+				FROM tbl_Ot_Junction o
+				join tbl_Ot_Type ot on ot.id = o.ot_type_id
+				where o.work_schedule_id = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, workScheduleId);
+			try (var rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(new Object[] {
+							rs.getInt("id"),
+							rs.getInt("work_schedule_id"),
+							rs.getInt("ot_type_id"),
+							rs.getTimestamp("ot_check_in_time"),
+							rs.getTimestamp("ot_check_out_time"),
+							rs.getString("ot_name"),
+							rs.getTime("ot_start"),
+							rs.getTime("ot_end"),
+							rs.getInt("active")
+					});
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
+	public List<Object[]> getAllOtRecordsForMonth(int year, int month){
+		List<Object[]> list = new ArrayList<>();
+		var sql =
+				"""
+				SELECT 	o.*,
+						ot.ot_name,
+						ot.ot_start,
+						ot.ot_end,
+						ot.active,
+						ws.employee_id,
+						ws.work_date
+				FROM tbl_Ot_Junction o
+				left join tbl_Ot_Type ot on ot.id = o.ot_type_id
+				left join tbl_Work_Schedule ws on o.work_schedule_id = ws.id
+				where YEAR(ws.work_date) = ? and MONTH(work_date) = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, year);
+			ps.setInt(2,month);
+			try (var rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(new Object[] {
+							rs.getInt("id"),
+							rs.getInt("work_schedule_id"),
+							rs.getInt("ot_type_id"),
+							rs.getTimestamp("ot_check_in_time"),
+							rs.getTimestamp("ot_check_out_time"),
+							rs.getString("ot_name"),
+							rs.getTime("ot_start"),
+							rs.getTime("ot_end"),
+							rs.getInt("active"),
+							rs.getInt("employee_id"),
+							rs.getDate("work_date")
+					});
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
+
 
 }

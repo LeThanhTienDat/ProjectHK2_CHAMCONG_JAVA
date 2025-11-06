@@ -112,15 +112,6 @@ public class AttendanceAdminPanel extends JPanel {
 
 		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 300);
 		txtSearch.setColumns(30);
-		//		txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-		//			@Override
-		//			public void insertUpdate(javax.swing.event.DocumentEvent e) { update(); }
-		//			@Override
-		//			public void removeUpdate(javax.swing.event.DocumentEvent e) { update(); }
-		//			@Override
-		//			public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
-		//			private void update() { SwingUtilities.invokeLater(() -> updateTableHeaderAndData()); }
-		//		});
 
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
 		btnSearch.addActionListener(e -> updateTableHeaderAndData());
@@ -213,6 +204,62 @@ public class AttendanceAdminPanel extends JPanel {
 				table.removeColumn(table.getColumnModel().getColumn(restaurantIdColIndex));
 			}
 
+			var totalCols = table.getColumnCount();
+
+			// 1. Đặt độ rộng cố định cho các cột thông tin ban đầu (0 đến 4)
+			// Các cột: ID, Mã NV, Tên NV, Chức vụ, Phòng ban
+			table.getColumnModel().getColumn(0).setPreferredWidth(40);  // ID
+			table.getColumnModel().getColumn(1).setPreferredWidth(70);  // Mã NV
+			table.getColumnModel().getColumn(2).setPreferredWidth(150); // Tên NV
+			table.getColumnModel().getColumn(3).setPreferredWidth(70); // Chức vụ
+			table.getColumnModel().getColumn(4).setPreferredWidth(80); // Phòng ban (index 5 đã bị xóa/ẩn)
+			// Cột thứ 5 hiện tại là cột ngày đầu tiên
+
+			// 2. Đặt độ rộng cố định cho Cột Ngày (từ index 5 đến totalCols - 5)
+			var startDayColumn = 5;
+			var endDayColumn = totalCols - 4; // Cột cuối cùng trước 4 cột tổng hợp
+			var dayWidth = 60; // Độ rộng mong muốn cho cột ngày
+
+			for (var i = startDayColumn; i < endDayColumn; i++) {
+				table.getColumnModel().getColumn(i).setPreferredWidth(dayWidth);
+			}
+
+			// 3. Đặt độ rộng cố định cho các Cột Tổng Hợp (4 cột cuối)
+			// Các cột: Trễ, Sớm, Nghỉ P, Nghỉ K/L
+			var summaryWidth = 80; // Độ rộng cho các cột tổng hợp
+			table.getColumnModel().getColumn(totalCols - 4).setPreferredWidth(summaryWidth);
+			table.getColumnModel().getColumn(totalCols - 3).setPreferredWidth(summaryWidth);
+			table.getColumnModel().getColumn(totalCols - 2).setPreferredWidth(summaryWidth);
+			table.getColumnModel().getColumn(totalCols - 1).setPreferredWidth(summaryWidth);
+
+			// --- KẾT THÚC LOGIC ĐẶT ĐỘ RỘNG CỐ ĐỊNH ---
+
+			// 1. Tạo Renderer Căn Giữa
+			var centerRenderer = new DefaultTableCellRenderer();
+			centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+			centerRenderer.setFont(new Font("Segoe UI", Font.PLAIN, 12)); // Tăng font cho dễ nhìn
+
+			// 2. Áp dụng Renderer cho các cột: ID (0), Mã NV (1), Chức vụ (3), Phòng ban (4)
+
+			// Cột 0: ID
+			table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+
+			// Cột 1: Mã NV
+			table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+
+			table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+			// Cột 3: Chức vụ
+			table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+
+			// Cột 4: Phòng ban
+			table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+
+			// Lưu ý: Cột Tên NV (2) sẽ giữ nguyên căn trái (default) hoặc bạn có thể đặt căn trái nếu muốn chắc chắn.
+
+			// --- KẾT THÚC: LOGIC CĂN GIỮA CỘT THÔNG TIN ---
+
+
+
 			DefaultTableCellRenderer dayRenderer = new DefaultTableCellRenderer() {
 				@Override
 				public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
@@ -222,51 +269,90 @@ public class AttendanceAdminPanel extends JPanel {
 					lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
 					lbl.setForeground(Color.BLACK);
 
-					var totalCols = table.getColumnCount();
 					var cellText = value != null ? value.toString().toUpperCase() : "";
+					var shiftNameDisplay = cellText; // Mặc định là chuỗi đầy đủ
+					var statusKey = "";
 
-					// Highlight theo ký hiệu
-					switch (cellText) {
-					case "X":
-						lbl.setBackground(new Color(200, 230, 201)); // xanh nhạt
+					// --- LOGIC PHÂN TÁCH CHUỖI MỚI (Xử lý NAME|STATUS) ---
+					if (cellText.contains("|")) {
+						var parts = cellText.split("\\|");
+						if (parts.length == 2) {
+							shiftNameDisplay = parts[0]; // Lấy "OT" hoặc "CA SÁNG"
+							statusKey = parts[1];        // Lấy "X", "V", "*", "T"
+						}
+					}
+					// --- KẾT THÚC LOGIC PHÂN TÁCH CHUỖI MỚI ---
+
+					// --- LOGIC XỬ LÝ MÀU SẮC MỚI ---
+
+					lbl.setBackground(Color.WHITE);
+					lbl.setForeground(Color.BLACK);
+
+					// 1. Xác định màu nền và chữ dựa trên TRẠNG THÁI (STATUS KEY)
+					switch (statusKey.toUpperCase()) {
+					case "T": // Trễ/Sớm (Mức cảnh báo cao nhất - Đỏ)
+						lbl.setBackground(DANGER_RED.brighter());
+						lbl.setForeground(Color.WHITE); // Chữ trắng cho nổi bật
 						break;
-					case "P":
-						lbl.setBackground(new Color(255, 235, 59)); // vàng
+					case "X": // Đủ Check-in/out (Xanh lá - Thành công)
+						lbl.setBackground(SUCCESS_GREEN.brighter().brighter());
+						lbl.setForeground(TEXT_PRIMARY);
 						break;
-					case "W":
-						lbl.setBackground(new Color(179, 229, 252)); // xanh dương nhạt
+					case "V": // Thiếu 1 trong 2 (Vàng - Cảnh báo)
+						lbl.setBackground(WARNING_ORANGE.brighter().brighter());
+						lbl.setForeground(TEXT_PRIMARY);
 						break;
-					case "L":
-					case "N":
-					case "T":
-						lbl.setBackground(new Color(255, 255, 255));
+					case "*": // Chưa chấm công (Hồng/Xám - Thiếu sót)
+						lbl.setBackground(new Color(248, 215, 218));
+						lbl.setForeground(TEXT_PRIMARY);
 						break;
 					default:
-						lbl.setBackground(Color.WHITE);
+						// Giữ màu mặc định (Trắng/Đen)
 						break;
 					}
 
-					// Cột ngày (5 → totalCols-4) highlight đỏ nếu đi trễ >5 hoặc về sớm >5
-					if (column >= 6 && column < totalCols - 4 && !cellText.isEmpty()) {
+					// 2. Ưu tiên: Nếu là OT (Tăng ca), TÙY CHỈNH MÀU NỀN DỰA TRÊN MÀU TRẠNG THÁI VỪA ÁP DỤNG
+					if (shiftNameDisplay.equals("OT")) {
+						// Nếu OT mà ĐỦ công (X), dùng màu Teal để phân biệt với ca thường
+						if (statusKey.equalsIgnoreCase("X")) {
+							lbl.setBackground(TEAL.brighter());
+							lbl.setForeground(Color.WHITE);
+						}
+						// Nếu OT mà có vấn đề (V, *, T), giữ nguyên màu cảnh báo (Đỏ/Vàng/Hồng)
+						// ví dụ: OT|T sẽ màu Đỏ, OT|V sẽ màu Vàng, OT|* sẽ màu Hồng
+					}
+					// --- KẾT THÚC LOGIC XỬ LÝ MÀU SẮC MỚI ---
+
+					// Cột ngày (5 → totalCols-4) highlight đỏ nếu đi trễ >6 hoặc về sớm >6
+					// ⚠️ Lưu ý: Việc highlight này có thể ghi đè màu Teal/Đỏ/Vàng nếu không được quản lý cẩn thận.
+					// Tôi giữ nguyên logic này của bạn ở đây:
+					var totalCols = table.getColumnCount();
+					if (column >= 5 && column < totalCols - 4 && !cellText.isEmpty()) { // Sửa column >= 6 thành >= 5 (vì cột ngày bắt đầu từ index 5)
+						// Lấy giá trị tổng hợp (totalLate, totalEarly)
 						var totalLate = parseIntSafe(table.getValueAt(row, totalCols - 4));
 						var totalEarly = parseIntSafe(table.getValueAt(row, totalCols - 3));
 
 						if (totalLate > 6 || totalEarly > 6) {
+							// Đây là màu cảnh báo tổng hợp, có thể ghi đè màu X/V
 							lbl.setBackground(new Color(255, 102, 102));
 						}
 					}
 
 					if (isSelected) {
+						// Highlight khi được chọn luôn được ưu tiên
 						lbl.setBackground(new Color(227, 242, 253));
 					}
 
 					lbl.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 1, Color.GRAY));
-					lbl.setText(cellText);
+					lbl.setText(shiftNameDisplay); // <-- Hiển thị "OT" hoặc "Ca Sáng"
 					return lbl;
 				}
 			};
-
-			for (var i = 5; i < table.getColumnCount(); i++) {
+			endDayColumn = table.getColumnCount() - 4;
+			//			for (var i = 5; i < table.getColumnCount(); i++) {
+			//				table.getColumnModel().getColumn(i).setCellRenderer(dayRenderer);
+			//			}
+			for (var i = 5; i < endDayColumn; i++) {
 				table.getColumnModel().getColumn(i).setCellRenderer(dayRenderer);
 			}
 		});
@@ -427,19 +513,14 @@ public class AttendanceAdminPanel extends JPanel {
 				new EmptyBorder(10, 0, 10, 0)));
 
 		String[][] legends = {
-				{"X", "Làm việc bình thường (Có mặt)"},
-				{"P", "Phép năm"},
-				{"L", "Lễ/Tết"},
-				{"N", "Nghỉ không lương"},
-				{"W", "WFH (Làm việc từ xa)"},
-				{"T", "Tăng ca"}
+				{"A1,A2,...", "Mã ca"}
 		};
 
 		for (String[] lg : legends) {
 			var icon = new JLabel(lg[0]);
 			icon.setFont(new Font("Segoe UI", Font.BOLD, 12));
 			icon.setForeground(PRIMARY_BLUE);
-			icon.setPreferredSize(new Dimension(20, 20));
+			icon.setPreferredSize(new Dimension(40, 20));
 			icon.setToolTipText(lg[1]);
 
 			var desc = new JLabel(lg[1]);
@@ -457,19 +538,24 @@ public class AttendanceAdminPanel extends JPanel {
 		summaryLegend.setForeground(SUCCESS_GREEN);
 		legend.add(summaryLegend);
 
-		var cnLuong = new JLabel("CN Có Lương (Xanh)");
-		cnLuong.setForeground(SUCCESS_GREEN);
-		legend.add(cnLuong);
+		var cnHasCheckInOut = new JLabel("Chấm công đúng giờ (Xanh)");
+		cnHasCheckInOut.setForeground(SUCCESS_GREEN);
+		legend.add(cnHasCheckInOut);
 
-		var cnKhongLuong = new JLabel("CN Không Lương (Đỏ)");
-		cnKhongLuong.setForeground(DANGER_RED);
-		legend.add(cnKhongLuong);
+		var cnCheckMissTime = new JLabel("Chấm công trễ/ra sớm (Đỏ)");
+		cnCheckMissTime.setForeground(DANGER_RED);
+		legend.add(cnCheckMissTime);
+
+		var cnWaiting = new JLabel("Thiếu chấm công (Vàng)");
+		cnWaiting.setForeground(WARNING_ORANGE.brighter());
+		legend.add(cnWaiting);
 
 		return legend;
 	}
 
 	public void styleTable(JTable t) {
 		var h = t.getTableHeader();
+		var cols = t.getColumnCount();
 		h.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		h.setBackground(PRIMARY_BLUE);
 		h.setForeground(Color.WHITE);
@@ -489,113 +575,6 @@ public class AttendanceAdminPanel extends JPanel {
 			}
 		};
 		h.setDefaultRenderer(renderer);
-
-		DefaultTableCellRenderer dayRenderer = new DefaultTableCellRenderer() {
-			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value,
-					boolean isSelected, boolean hasFocus,
-					int row, int column) {
-
-				var lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-				lbl.setHorizontalAlignment(SwingConstants.CENTER);
-				lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-
-				var val = value != null ? value.toString().toUpperCase() : "";
-
-				var startDayCol = 5;
-				var endDayCol = table.getColumnCount() - 5;
-
-				if (column >= startDayCol && column < endDayCol) {
-					try {
-						var day = column - startDayCol + 1;
-						var empId = (int) table.getValueAt(row, 0);
-
-						var monthStr = (String) cmbMonthYear.getSelectedItem();
-						int month = 0, year = 0;
-						if (monthStr != null && monthStr.contains("/")) {
-							var parts = monthStr.replace("Tháng", "").split("/");
-							month = Integer.parseInt(parts[0].trim());
-							year = Integer.parseInt(parts[1].trim());
-						}
-
-						var schedules = service.getWorkSchedules(empId, year, month, day);
-
-						if (schedules != null && !schedules.isEmpty()) {
-							var ws = schedules.get(0); // giả sử 1 ca/1 ngày
-
-							var highlightRed = false;
-
-							if (ws.getCheckInTime() != null && ws.isComeLate()) {
-								// check trễ > 5 phút
-								if (ws.getTimeLateMinutes() > 5) {
-									highlightRed = true;
-								}
-							}
-
-							if (ws.getCheckOutTime() != null && ws.isEarlyLeave()) {
-								// check về sớm > 5 phút
-								if (ws.getEarlyLeaveMinutes() > 5) {
-									highlightRed = true;
-								}
-							}
-
-							if (highlightRed) {
-								lbl.setBackground(DANGER_RED);
-							} else {
-								// tô theo ký hiệu
-								switch (val) {
-								case "X": lbl.setBackground(new Color(200, 230, 201)); break;
-								case "P": lbl.setBackground(new Color(255, 235, 59)); break;
-								case "W": lbl.setBackground(new Color(179, 229, 252)); break;
-								case "L":
-								case "N":
-								case "T":
-									lbl.setBackground(CARD_WHITE); break;
-								default: lbl.setBackground(CARD_WHITE);
-								}
-							}
-
-						} else {
-							lbl.setBackground(CARD_WHITE);
-						}
-
-					} catch (Exception ex) {
-						ex.printStackTrace();
-						lbl.setBackground(CARD_WHITE);
-					}
-				} else {
-					lbl.setBackground(CARD_WHITE);
-				}
-
-				if (isSelected) {
-					lbl.setBackground(new Color(227, 242, 253));
-				}
-
-				lbl.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 1, BORDER_COLOR));
-				lbl.setText(val);
-				return lbl;
-			}
-		};
-
-
-
-
-		// Apply renderer cho các cột ngày
-		for (var i = 5; i < table.getColumnCount() - 5; i++) {
-			table.getColumnModel().getColumn(i).setCellRenderer(dayRenderer);
-		}
-
-
-		// apply chỉ cho cột ngày
-		for (var i = 5; i < table.getColumnCount() - 5; i++) {
-			table.getColumnModel().getColumn(i).setCellRenderer(dayRenderer);
-		}
-
-		// áp dụng renderer nhưng bảo vệ nếu chưa có đủ cột
-		var cols = t.getColumnCount();
-		for (var i = 5; i < Math.min(36, cols); i++) {
-			t.getColumnModel().getColumn(i).setCellRenderer(dayRenderer);
-		}
 
 		DefaultTableCellRenderer summaryRenderer = new DefaultTableCellRenderer() {
 			@Override
@@ -783,11 +762,6 @@ public class AttendanceAdminPanel extends JPanel {
 		formPanel.setOnDataChanged(() -> {
 			service.clearCache(finalYear, finalMonth);
 			updateTableHeaderAndData();
-			SwingUtilities.invokeLater(() -> {
-				if (table.getColumnCount() > 5) {
-					table.removeColumn(table.getColumnModel().getColumn(5));
-				}
-			});
 		});
 
 		// Gửi danh sách ca làm để hiển thị

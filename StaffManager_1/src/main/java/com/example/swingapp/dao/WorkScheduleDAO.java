@@ -248,4 +248,31 @@ public class WorkScheduleDAO implements BaseDAO<WorkSchedule> {
 
 		return null;
 	}
+
+	public Object[] getWorkDate(int workScheduleId) {
+		var sql = """
+				    SELECT ws.work_date
+				    FROM tbl_Work_Schedule ws
+				    WHERE ws.id = ?
+				""";
+		try (
+				var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql);
+				) {
+			ps.setInt(1, workScheduleId);
+			var rs = ps.executeQuery();
+
+			if (rs.next()) {
+				var getShiftInfo = new Object[] {
+						rs.getDate("work_date")
+				};
+				return getShiftInfo;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 }

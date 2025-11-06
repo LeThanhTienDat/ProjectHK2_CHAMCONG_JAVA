@@ -109,10 +109,14 @@ public class OtDetailsPanel extends JPanel {
 					);
 
 			if (confirm == JOptionPane.YES_OPTION) {
+
 				var success = otJunctionService.checkInOt(workScheduleId, otTypeId);
+				JOptionPane.showMessageDialog(this, workScheduleId);
+				JOptionPane.showMessageDialog(this, otTypeId);
 				if (success) {
 					JOptionPane.showMessageDialog(this, "Check-in OT thành công!");
 					parent.reloadForm();
+					parent.notifyDataChanged();
 				} else {
 					JOptionPane.showMessageDialog(this, "Check-in thất bại!");
 				}
@@ -184,6 +188,7 @@ public class OtDetailsPanel extends JPanel {
 				if (success) {
 					JOptionPane.showMessageDialog(this, "Check-out OT thành công!");
 					parent.reloadForm();
+					parent.notifyDataChanged();
 				} else {
 					JOptionPane.showMessageDialog(this, "Check-out thất bại!");
 				}

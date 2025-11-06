@@ -161,14 +161,20 @@ public class AttendanceDAO {
 
 		var sql = """
 				    SELECT
-				        employee_id,
-				        work_date,
-				        come_late,
-				        early_leave,
-				        time_work,
-				        check_in_time,
-				        check_out_time
-				    FROM tbl_Work_Schedule
+				    	ws.id,
+				        ws.employee_id,
+				        ws.work_date,
+				        ws.come_late,
+				        ws.early_leave,
+				        ws.time_work,
+				        ws.check_in_time,
+				        ws.check_out_time,
+				        ws.shift_id,
+				        s.shift_name,
+				        s.start_time,
+				        s.end_time
+				    FROM tbl_Work_Schedule ws
+				    left join tbl_shift s on s.id = ws.shift_id
 				    WHERE YEAR(work_date) = ? AND MONTH(work_date) = ?
 				""";
 
@@ -187,7 +193,12 @@ public class AttendanceDAO {
 							rs.getInt("early_leave"),
 							rs.getInt("time_work"),
 							rs.getTimestamp("check_in_time"),
-							rs.getTimestamp("check_out_time")
+							rs.getTimestamp("check_out_time"),
+							rs.getInt("shift_id"),
+							rs.getString("shift_name"),
+							rs.getTime("start_time"),
+							rs.getTime("end_time"),
+							rs.getInt("id")
 					});
 				}
 			}

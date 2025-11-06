@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import com.example.swingapp.dao.AttendanceDAO;
 import com.example.swingapp.dao.EmployeeDAO;
+import com.example.swingapp.dao.OTJunctionDAO;
 import com.example.swingapp.model.DayWorkStatus;
 import com.example.swingapp.model.WorkDetail;
 import com.example.swingapp.model.WorkSchedule;
@@ -19,6 +20,7 @@ import com.example.swingapp.model.WorkSchedule;
 public class AttendanceService {
 	private final AttendanceDAO dao = new AttendanceDAO();
 	private final EmployeeDAO employeeDao = new EmployeeDAO();
+	private final OTJunctionDAO otJunctionDao = new OTJunctionDAO();
 
 	// 🔹 Cache dữ liệu theo tháng (RAM)
 	private final Map<String, Object[][]> monthCache = new HashMap<>();
@@ -48,10 +50,164 @@ public class AttendanceService {
 	}
 
 	// ------------------- LOAD DỮ LIỆU -------------------
+	//	public Object[][] getAttendanceByMonth(int year, int month) {
+	//		var key = year + "-" + month;
+	//
+	//		//Nếu đã cache, trả về luôn
+	//		if (monthCache.containsKey(key)) {
+	//			System.out.println("[CACHE HIT] Dữ liệu tháng " + key + " lấy từ RAM");
+	//			return monthCache.get(key);
+	//		}
+	//
+	//		System.out.println("[CACHE MISS] Đang tải dữ liệu tháng " + key + " từ DB...");
+	//
+	//		var employees = dao.loadBasicEmployeeData();
+	//		var header = buildAttendanceHeader(year, month);
+	//		var totalCols = header.size();
+	//
+	//		//Chỉ load work schedule 1 lần
+	//		var allWorkSchedules = dao.getAllWorkSchedules(year, month);
+	//
+	//		//Gom theo employeeId
+	//		var workMap = new HashMap<Integer, List<Object[]>>();
+	//		for (var record : allWorkSchedules) {
+	//			var empId = (int) record[0];
+	//			workMap.computeIfAbsent(empId, k -> new ArrayList<>()).add(record);
+	//		}
+	//
+	//		List<Object[]> rows = new ArrayList<>();
+	//
+	//		for (var emp : employees) {
+	//			var row = new Object[totalCols];
+	//			System.arraycopy(emp, 1, row, 0, 5);
+	//
+	//			for (var i = 5; i < totalCols - 4; i++) {
+	//				row[i] = "";
+	//			}
+	//			row[5] = emp[6];
+	//
+	//			var employeeId = (int) emp[0];
+	//			var works = workMap.getOrDefault(employeeId, List.of());
+	//			var totalLate = 0;
+	//			var totalEarly = 0;
+	//			var totalLeave = 0;
+	//			var totalUnpaidLeave = 0;
+	//
+	//			// Gom các ca theo ngày
+	//			Map<Integer, List<Object[]>> dayMap = new HashMap<>();
+	//			for (var record : works) {
+	//				var date = (LocalDate) record[1];
+	//				var day = date.getDayOfMonth();
+	//				dayMap.computeIfAbsent(day, k -> new ArrayList<>()).add(record);
+	//				totalLate += (int) record[2];
+	//				totalEarly += (int) record[3];
+	//			}
+	//
+	//			for (var entry : dayMap.entrySet()) {
+	//				int day = entry.getKey();
+	//				var colIndex = 6 + (day - 1);
+	//
+	//				// Vì chắc chắn mỗi ngày chỉ có 1 workschedule, ta chỉ lấy bản ghi đầu tiên/duy nhất
+	//				var record = entry.getValue().get(0);
+	//				// Lấy TẤT CẢ dữ liệu cần thiết từ bản ghi duy nhất này
+	//				var shiftName = (String) record[8];
+	//				var comeLate = (int) record[2];
+	//				var earlyLeave = (int) record[3];
+	//				var checkIn = (Timestamp) record[5];
+	//				var checkOut = (Timestamp) record[6];
+	//				var workscheduleId = (Integer) record[11]; // Lấy workscheduleId ra ngoài
+	//
+	//				// Khai báo kết quả
+	//				var cellDisplay = "";    // Dữ liệu ca chính
+	//				String otDisplay = null;    // Dữ liệu OT
+	//
+	//				System.out.println("Kiểm tra ID & SHIFT: WSID=" + workscheduleId + ", ShiftName=" + shiftName);
+	//
+	//
+	//				// --- 1. XỬ LÝ CA CHÍNH (Gán vào cellDisplay) ---
+	//				// Chỉ chạy nếu có Shift Name (Ca Chính)
+	//				if (shiftName != null && !shiftName.isEmpty()) {
+	//					String statusSymbol;
+	//					if ((checkIn != null || checkOut != null) && (comeLate > 0 || earlyLeave > 0)) {
+	//						statusSymbol = "T";
+	//					}
+	//					else if (checkIn == null && checkOut == null) {
+	//						statusSymbol = "*";
+	//					} else if (checkIn != null && checkOut != null) {
+	//						statusSymbol = "X";
+	//					} else {
+	//						statusSymbol = "V";
+	//					}
+	//					cellDisplay = shiftName + "|" + statusSymbol;
+	//				}
+	//
+	//				// --- 2. XỬ LÝ OT (Gán vào otDisplay) ---
+	//				// LUÔN chạy kiểm tra nếu workscheduleId tồn tại, dù có Ca Chính hay không!
+	//				if(workscheduleId != null){
+	//					var otRecords = otJunctionDao.getFullOtByWorkScheduleId(workscheduleId);
+	//					var totalOtRecords = otRecords.size();
+	//
+	//					if (totalOtRecords > 0) {
+	//						var completeOtChecks = 0;
+	//						var checkedOtRecords = 0;
+	//						final var CHECK_IN_INDEX = 3;
+	//						final var CHECK_OUT_INDEX = 4;
+	//
+	//						for (Object[] otRecord : otRecords) {
+	//							var otCheckIn = (Timestamp) otRecord[CHECK_IN_INDEX];
+	//							var otCheckOut = (Timestamp) otRecord[CHECK_OUT_INDEX];
+	//
+	//							if (otCheckIn != null && otCheckOut != null) {
+	//								completeOtChecks++;
+	//								checkedOtRecords++;
+	//							} else if (otCheckIn != null || otCheckOut != null) {
+	//								checkedOtRecords++;
+	//							}
+	//						}
+	//						String otStatusKey;
+	//						if (completeOtChecks == totalOtRecords) {
+	//							otStatusKey = "X";
+	//						} else if (checkedOtRecords > 0) {
+	//							otStatusKey = "V";
+	//						} else {
+	//							otStatusKey = "*";
+	//						}
+	//						otDisplay = "OT|" + otStatusKey;
+	//					}
+	//				}
+	//
+	//				// --- 3. GÁN KẾT QUẢ CUỐI CÙNG (ƯU TIÊN CA CHÍNH) ---
+	//				if (!cellDisplay.isEmpty()) {
+	//					// Ưu tiên 1: Có Ca Chính -> Hiển thị Ca Chính
+	//					row[colIndex] = cellDisplay;
+	//					System.out.println("FINAL: SHIFT " + cellDisplay);
+	//				} else if (otDisplay != null) {
+	//					// Ưu tiên 2: KHÔNG có Ca Chính, nhưng có OT -> Hiển thị OT
+	//					row[colIndex] = otDisplay;
+	//					System.out.println("FINAL: OT " + otDisplay);
+	//				} else {
+	//					// Ưu tiên 3: Không có gì cả
+	//					row[colIndex] = "";
+	//				}
+	//			}
+	//			row[totalCols - 4] = totalLate;
+	//			row[totalCols - 3] = totalEarly;
+	//			row[totalCols - 2] = totalLeave;
+	//			row[totalCols - 1] = totalUnpaidLeave;
+	//
+	//			rows.add(row);
+	//		}
+	//
+	//		var data = rows.toArray(new Object[0][]);
+	//
+	//		// lưu cache vào RAM
+	//		monthCache.put(key, data);
+	//
+	//		return data;
+	//	}
 	public Object[][] getAttendanceByMonth(int year, int month) {
 		var key = year + "-" + month;
 
-		//Nếu đã cache, trả về luôn
 		if (monthCache.containsKey(key)) {
 			System.out.println("[CACHE HIT] Dữ liệu tháng " + key + " lấy từ RAM");
 			return monthCache.get(key);
@@ -59,14 +215,36 @@ public class AttendanceService {
 
 		System.out.println("[CACHE MISS] Đang tải dữ liệu tháng " + key + " từ DB...");
 
+		// ----------------------------------------------------
+		// --- BƯỚC MỚI 1: TẢI VÀ CHUẨN BỊ DỮ LIỆU OT (BULK LOAD) ---
+		// ----------------------------------------------------
+		// ⚠️ Đã loại bỏ truy vấn lặp đi lặp lại trong vòng lặp chính
+
+		// Định nghĩa các Index dựa trên cấu trúc Object[] trả về từ getAllOtRecordsForMonth
+		final var OT_WS_ID_IDX = 1;      // work_schedule_id (Dùng làm Key Map)
+		final var OT_CHECK_IN_IDX = 3;   // ot_check_in_time
+		final var OT_CHECK_OUT_IDX = 4;  // ot_check_out_time
+
+		// Tải TẤT CẢ các bản ghi OT cho tháng chỉ trong 1 LẦN TRUY VẤN
+		var allOtRecordsForMonth = otJunctionDao.getAllOtRecordsForMonth(year, month);
+
+		// Tạo Map để tra cứu nhanh: Map<WorkScheduleId, List<Object[]>>
+		Map<Integer, List<Object[]>> otMapByWsId = new HashMap<>();
+
+		for (var otRecord : allOtRecordsForMonth) {
+			var wsId = (Integer) otRecord[OT_WS_ID_IDX];
+			otMapByWsId.computeIfAbsent(wsId, k -> new ArrayList<>()).add(otRecord);
+		}
+		// ----------------------------------------------------
+
 		var employees = dao.loadBasicEmployeeData();
 		var header = buildAttendanceHeader(year, month);
 		var totalCols = header.size();
 
-		//Chỉ load work schedule 1 lần
+		// Chỉ load work schedule 1 lần
 		var allWorkSchedules = dao.getAllWorkSchedules(year, month);
 
-		//Gom theo employeeId
+		// Gom theo employeeId
 		var workMap = new HashMap<Integer, List<Object[]>>();
 		for (var record : allWorkSchedules) {
 			var empId = (int) record[0];
@@ -75,6 +253,7 @@ public class AttendanceService {
 
 		List<Object[]> rows = new ArrayList<>();
 
+		// Bắt đầu lặp qua TỪNG NHÂN VIÊN
 		for (var emp : employees) {
 			var row = new Object[totalCols];
 			System.arraycopy(emp, 1, row, 0, 5);
@@ -86,7 +265,6 @@ public class AttendanceService {
 
 			var employeeId = (int) emp[0];
 			var works = workMap.getOrDefault(employeeId, List.of());
-			System.out.println("Kiểm tra works: "+works);
 			var totalLate = 0;
 			var totalEarly = 0;
 			var totalLeave = 0;
@@ -102,24 +280,94 @@ public class AttendanceService {
 				totalEarly += (int) record[3];
 			}
 
+			// Bắt đầu lặp qua TỪNG NGÀY CÓ CHẤM CÔNG (Vòng lặp có độ trễ cao nhất)
 			for (var entry : dayMap.entrySet()) {
 				int day = entry.getKey();
-				var colIndex = 5 + (day - 1);
-				var record = entry.getValue().get(0); // chỉ có 1 record duy nhất
+				var colIndex = 6 + (day - 1);
 
+				// Vì chắc chắn mỗi ngày chỉ có 1 workschedule, ta chỉ lấy bản ghi đầu tiên/duy nhất
+				var record = entry.getValue().get(0);
+
+				// Lấy TẤT CẢ dữ liệu cần thiết từ bản ghi duy nhất này
+				var shiftName = (String) record[8];
+				var comeLate = (int) record[2];
+				var earlyLeave = (int) record[3];
 				var checkIn = (Timestamp) record[5];
 				var checkOut = (Timestamp) record[6];
+				var workscheduleId = (Integer) record[11]; // Lấy workscheduleId ra ngoài
 
-				System.out.println(">> " + record[1] + " | checkIn=" + checkIn + " | checkOut=" + checkOut);
+				// Khai báo kết quả
+				var cellDisplay = "";    // Dữ liệu ca chính
+				String otDisplay = null;    // Dữ liệu OT
 
-				if (checkIn == null && checkOut == null) {
-					row[colIndex] = "*"; // chưa check-in/out ca nào
-				} else if (checkIn != null && checkOut != null) {
-					row[colIndex] = "X"; // đã đủ cả hai
+				// ❌ Loại bỏ log lặp lại: System.out.println("Kiểm tra ID & SHIFT: WSID=" + workscheduleId + ", ShiftName=" + shiftName);
+
+
+				// --- 1. XỬ LÝ CA CHÍNH (Gán vào cellDisplay) ---
+				if (shiftName != null && !shiftName.isEmpty()) {
+					String statusSymbol;
+					if ((checkIn != null || checkOut != null) && (comeLate > 0 || earlyLeave > 0)) {
+						statusSymbol = "T";
+					}
+					else if (checkIn == null && checkOut == null) {
+						statusSymbol = "*";
+					} else if (checkIn != null && checkOut != null) {
+						statusSymbol = "X";
+					} else {
+						statusSymbol = "V";
+					}
+					cellDisplay = shiftName + "|" + statusSymbol;
+				}
+
+				// --- 2. XỬ LÝ OT (Gán vào otDisplay) ---
+				if(workscheduleId != null){
+					// ✅ Tối ưu hóa: Thay thế truy vấn DB bằng TRA CỨU MAP trong RAM
+					var otRecords = otMapByWsId.getOrDefault(workscheduleId, List.of());
+					var totalOtRecords = otRecords.size();
+
+					if (totalOtRecords > 0) {
+						var completeOtChecks = 0;
+						var checkedOtRecords = 0;
+						// Sử dụng Index đã định nghĩa ở Bước 1
+						final var CHECK_IN_INDEX = OT_CHECK_IN_IDX;
+						final var CHECK_OUT_INDEX = OT_CHECK_OUT_IDX;
+
+						for (Object[] otRecord : otRecords) {
+							var otCheckIn = (Timestamp) otRecord[CHECK_IN_INDEX];
+							var otCheckOut = (Timestamp) otRecord[CHECK_OUT_INDEX];
+
+							if (otCheckIn != null && otCheckOut != null) {
+								completeOtChecks++;
+								checkedOtRecords++;
+							} else if (otCheckIn != null || otCheckOut != null) {
+								checkedOtRecords++;
+							}
+						}
+						String otStatusKey;
+						if (completeOtChecks == totalOtRecords) {
+							otStatusKey = "X";
+						} else if (checkedOtRecords > 0) {
+							otStatusKey = "V";
+						} else {
+							otStatusKey = "*";
+						}
+						otDisplay = "OT|" + otStatusKey;
+					}
+				}
+
+				// --- 3. GÁN KẾT QUẢ CUỐI CÙNG (ƯU TIÊN CA CHÍNH) ---
+				if (!cellDisplay.isEmpty()) {
+					row[colIndex] = cellDisplay;
+					// ❌ Loại bỏ log lặp lại: System.out.println("FINAL: SHIFT " + cellDisplay);
+				} else if (otDisplay != null) {
+					row[colIndex] = otDisplay;
+					// ❌ Loại bỏ log lặp lại: System.out.println("FINAL: OT " + otDisplay);
 				} else {
-					row[colIndex] = "V"; // có 1 trong 2 bị thiếu
+					row[colIndex] = "";
 				}
 			}
+
+			// Cập nhật tổng cuối hàng
 			row[totalCols - 4] = totalLate;
 			row[totalCols - 3] = totalEarly;
 			row[totalCols - 2] = totalLeave;

@@ -576,6 +576,12 @@ public class AttendanceFormPanel extends JPanel {
 		}
 	}
 
+	public void notifyDataChanged() {
+		if (onDataChanged != null) {
+			onDataChanged.run();
+		}
+	}
+
 	public void reloadForm() {
 		removeAll();
 		initUI(btnSave.getActionListeners()[0], btnCancel.getActionListeners()[0]);

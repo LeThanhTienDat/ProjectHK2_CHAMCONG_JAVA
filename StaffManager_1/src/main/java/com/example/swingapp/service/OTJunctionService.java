@@ -44,5 +44,11 @@ public class OTJunctionService {
 	public boolean checkOutOt(int workScheduleId, int otTypeId) {
 		return dao.checkOutOt(workScheduleId, otTypeId);
 	}
+	public List<Object[]> getFullOtByWorkScheduleId(int workScheduleId){
+		return dao.getFullOtByWorkScheduleId(workScheduleId);
+	}
+	public List<Object[]> getAllOtRecordsForMonth(int year, int month){
+		return dao.getAllOtRecordsForMonth(year, month);
+	}
 
 }
