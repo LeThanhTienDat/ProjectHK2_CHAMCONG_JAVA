@@ -10,6 +10,8 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.text.MessageFormat;
 import java.text.Normalizer;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ import javax.swing.table.DefaultTableModel;
 
 import com.example.swingapp.model.Restaurant;
 import com.example.swingapp.service.AttendanceService;
+import com.example.swingapp.service.OTJunctionService;
 import com.example.swingapp.service.RestaurantService;
 
 public class AttendanceAdminPanel extends JPanel {
@@ -45,7 +48,9 @@ public class AttendanceAdminPanel extends JPanel {
 	private JComboBox<String> cmbMonthYear;
 	private JComboBox<Restaurant> resFilter;
 	private boolean isInitializing = true;
+	private NotifiedButtonPanel btnApproveWrapper;
 	private final AttendanceService service = new AttendanceService();
+	private final OTJunctionService otJunctionService = new OTJunctionService();
 
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color BG_LIGHT = new Color(250, 251, 255);
@@ -112,6 +117,22 @@ public class AttendanceAdminPanel extends JPanel {
 
 		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 300);
 		txtSearch.setColumns(30);
+		txtSearch.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent e) {
+				if (txtSearch.getText().equals("Tìm kiếm theo tên nhân viên...")) {
+					txtSearch.setText("");
+					txtSearch.setForeground(TEXT_PRIMARY);
+				}
+			}
+			@Override
+			public void focusLost(FocusEvent e) {
+				if (txtSearch.getText().isEmpty()) {
+					txtSearch.setText("Tìm kiếm theo tên nhân viên...");
+					txtSearch.setForeground(Color.GRAY);
+				}
+			}
+		});
 
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
 		btnSearch.addActionListener(e -> updateTableHeaderAndData());
@@ -285,6 +306,7 @@ public class AttendanceAdminPanel extends JPanel {
 
 					// --- LOGIC XỬ LÝ MÀU SẮC MỚI ---
 
+					var isFuture = isFutureDateColumn(table, column);
 					lbl.setBackground(Color.WHITE);
 					lbl.setForeground(Color.BLACK);
 
@@ -429,13 +451,13 @@ public class AttendanceAdminPanel extends JPanel {
 
 	public JPanel createTableCard() {
 		var card = new JPanel(new BorderLayout());
-		card.setBorder(new EmptyBorder(20, 25, 20, 25));
+		card.setBorder(new EmptyBorder(15, 15, 15, 15));
 		card.setBackground(CARD_WHITE);
 
 		var topPanel = new JPanel(new BorderLayout());
 		topPanel.setOpaque(false);
 
-		var headerLabel = new JLabel("BẢNG CHẤM CÔNG TỔNG HỢP", SwingConstants.CENTER);
+		var headerLabel = new JLabel("BẢNG CHẤM CÔNG TỔNG HỢP", SwingConstants.LEFT);
 		headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		headerLabel.setForeground(PRIMARY_BLUE);
 		headerLabel.setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -513,14 +535,14 @@ public class AttendanceAdminPanel extends JPanel {
 				new EmptyBorder(10, 0, 10, 0)));
 
 		String[][] legends = {
-				{"A1,A2,...", "Mã ca"}
+				{"A1,A2,...: ", "Mã ca"}
 		};
 
 		for (String[] lg : legends) {
 			var icon = new JLabel(lg[0]);
 			icon.setFont(new Font("Segoe UI", Font.BOLD, 12));
 			icon.setForeground(PRIMARY_BLUE);
-			icon.setPreferredSize(new Dimension(40, 20));
+			icon.setPreferredSize(new Dimension(60, 20));
 			icon.setToolTipText(lg[1]);
 
 			var desc = new JLabel(lg[1]);
@@ -622,19 +644,22 @@ public class AttendanceAdminPanel extends JPanel {
 
 		var btnPDF = createButton("Xuất PDF", TEAL, 130);
 		btnPDF.addActionListener(e -> printPDF());
-		var btnDelete = createButton("Xóa Dòng", DANGER_RED, 130);
+		var btnDelete = createButton("Xóa", DANGER_RED, 130);
 		btnDelete.addActionListener(e -> deleteRow());
 
+		// 👇 Thay đổi cách tạo và thêm nút Duyệt Chấm Công
 		var btnApprove = createButton("Duyệt Chấm Công", SUCCESS_GREEN, 150);
-		btnApprove.addActionListener(e -> approveAttendance());
+		btnApprove.addActionListener(e -> openOtConfirmForm());
+		btnApproveWrapper = new NotifiedButtonPanel(btnApprove);
 
 		var btnLegend = createButton("Ký Hiệu Chấm Công", WARNING_ORANGE, 150);
 		btnLegend.addActionListener(e -> showLegendDialog());
 
 		panel.add(btnDelete);
 		panel.add(btnPDF);
-		panel.add(btnApprove);
+		panel.add(btnApproveWrapper);
 		panel.add(btnLegend);
+		updateApprovalBadgeCount();
 		return panel;
 	}
 
@@ -692,12 +717,7 @@ public class AttendanceAdminPanel extends JPanel {
 	}
 
 	public void approveAttendance() {
-		var selectedRows = table.getSelectedRowCount();
-		if (selectedRows == 0) {
-			JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần duyệt!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-		JOptionPane.showMessageDialog(this, "Duyệt chấm công cho " + selectedRows + " nhân viên (Demo: Cập nhật trạng thái duyệt trong DB)");
+
 	}
 
 	public void printPDF() {
@@ -708,6 +728,49 @@ public class AttendanceAdminPanel extends JPanel {
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this, "Lỗi PDF: " + ex.getMessage());
 		}
+	}
+
+	public void openOtConfirmForm() {
+		var dialog = new javax.swing.JDialog(SwingUtilities.getWindowAncestor(this),
+				"Duyệt Ot",ModalityType.APPLICATION_MODAL);
+		dialog.getContentPane().setLayout(new BorderLayout());
+		dialog.pack();           // Tính toán kích thước nội dung
+		dialog.setSize(1000, 1000);
+		dialog.setResizable(false); // Không cho người dùng thay đổi kích thước
+		dialog.setLocationRelativeTo(null);
+		Runnable refreshAction = () -> {
+			// 1. Cập nhật số lượng Badge (Cần Duyệt)
+			updateApprovalBadgeCount();
+			// 2. Cập nhật lại Bảng tổng hợp (Phòng trường hợp trạng thái OT đã thay đổi)
+			updateTableHeaderAndData();
+		};
+
+		// 1. Gắn hành động refresh vào event đóng cửa sổ (Windows Listener)
+		dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosed(java.awt.event.WindowEvent e) {
+				// Hành động này chạy khi cửa sổ bị đóng (bằng nút X hoặc dialog.dispose())
+				refreshAction.run();
+			}
+		});
+		var formPanel = new AttendanceOtConfirmPanel(e -> {
+			JOptionPane.showMessageDialog(dialog,
+					"Đã xác nhận chấm công cho ngày",
+					"Thông báo", JOptionPane.INFORMATION_MESSAGE);
+			dialog.dispose();
+			updateApprovalBadgeCount();
+		}, e -> {
+			dialog.dispose();
+			updateApprovalBadgeCount();
+		});
+		formPanel.setOnDataChanged(refreshAction);
+		formPanel.setPreferredSize(new Dimension(800, 600));
+		dialog.getContentPane().add(formPanel);
+		dialog.setSize(1700, 700);
+		dialog.setMinimumSize(new Dimension(900, 700)); // tránh bị co lại
+		dialog.setResizable(false);
+		dialog.setLocationRelativeTo(null);
+		dialog.setVisible(true);
 	}
 
 	public void openAttendanceForm(int row, int col) {
@@ -743,9 +806,21 @@ public class AttendanceAdminPanel extends JPanel {
 		// Lấy ca làm của nhân viên trong ngày
 		var shifts = service.getShiftsForEmployee(employeeName, formattedDate);
 
+		Runnable refreshAction = () -> {
+			updateTableHeaderAndData();
+			updateApprovalBadgeCount();
+		};
+
 		// Hiển thị form (chỉ xem, không nhập tay)
 		var dialog = new javax.swing.JDialog(SwingUtilities.getWindowAncestor(this),
 				"Lịch làm của " + employeeName + " (" + formattedDate + ")",ModalityType.APPLICATION_MODAL);
+		dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosed(java.awt.event.WindowEvent e) {
+				// Hành động này chạy khi cửa sổ bị đóng (bằng nút X hoặc dialog.dispose())
+				refreshAction.run();
+			}
+		});
 		dialog.getContentPane().setLayout(new BorderLayout());
 		dialog.pack();           // Tính toán kích thước nội dung
 		dialog.setSize(1000, 1000);
@@ -761,7 +836,7 @@ public class AttendanceAdminPanel extends JPanel {
 		final var finalMonth = month;
 		formPanel.setOnDataChanged(() -> {
 			service.clearCache(finalYear, finalMonth);
-			updateTableHeaderAndData();
+			refreshAction.run(); // Cập nhật ngay lập tức
 		});
 
 		// Gửi danh sách ca làm để hiển thị
@@ -773,7 +848,7 @@ public class AttendanceAdminPanel extends JPanel {
 		dialog.setSize(900, 700);
 		dialog.setMinimumSize(new Dimension(900, 700)); // tránh bị co lại
 		dialog.setResizable(false);
-		dialog.setLocationRelativeTo(this);
+		dialog.setLocationRelativeTo(null);
 		dialog.setVisible(true);
 
 	}
@@ -788,7 +863,7 @@ public class AttendanceAdminPanel extends JPanel {
 			for (Restaurant r : restaurants) {
 				resFilter.addItem(r);
 			}
-			resFilter.setSelectedIndex(-1);
+			resFilter.setSelectedIndex(0);
 			isInitializing = false;
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -806,5 +881,142 @@ public class AttendanceAdminPanel extends JPanel {
 		// Loại bỏ các ký tự dấu
 		normalized = normalized.replaceAll("\\p{M}", "");
 		return normalized.toLowerCase();
+	}
+
+	private boolean isFutureDateColumn(JTable table, int column) {
+		// 1. Lấy tiêu đề cột
+		var headerValue = table.getColumnModel().getColumn(column).getHeaderValue();
+		if (headerValue == null) {
+			return false;
+		}
+		var headerText = headerValue.toString().trim();
+
+		// 2. Kiểm tra định dạng (phải là ngày/tháng, ví dụ: 07/11)
+		if (!headerText.matches("\\d{1,2}/\\d{1,2}")) {
+			return false;
+		}
+
+		try {
+			// 3. Lấy tháng/năm đang được chọn từ JComboBox (cmbMonthYear)
+			var monthStr = (String) cmbMonthYear.getSelectedItem();
+			var selectedYear = java.time.Year.now().getValue();
+			if (monthStr != null && monthStr.contains("/")) {
+				var parts = monthStr.replace("Tháng", "").split("/");
+				selectedYear = Integer.parseInt(parts[1].trim());
+			}
+
+			// 4. Tạo ngày cột (sử dụng năm được chọn)
+			var fullDateStr = headerText + "/" + selectedYear;
+			var formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+			var columnDate = LocalDate.parse(fullDateStr, formatter);
+
+			// 5. So sánh với ngày hôm nay (chỉ cần kiểm tra xem ngày có >= ngày mai không)
+			var today = LocalDate.now();
+
+			// Nếu ngày của cột LỚN HƠN ngày hiện tại (là ngày mai trở đi)
+			return columnDate.isAfter(today);
+
+		} catch (Exception e) {
+			// Lỗi parse, không tô màu
+			return false;
+		}
+	}
+
+	public class NotifiedButtonPanel extends JPanel {
+		private static final long serialVersionUID = 1L;
+		private final JButton button;
+		private int notificationCount = 0;
+		private static final Color BADGE_COLOR = Color.RED;
+		private static final Color BADGE_TEXT_COLOR = Color.WHITE;
+
+		public NotifiedButtonPanel(JButton button) {
+			this.button = button;
+			// Bắt buộc phải là FlowLayout để nút nằm gọn
+			setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
+			setOpaque(false); // Quan trọng để nền JPanel trong suốt
+			add(button);
+			setPreferredSize(button.getPreferredSize());
+		}
+
+		public void setNotificationCount(int count) {
+			notificationCount = count;
+			repaint(); // Yêu cầu vẽ lại để hiển thị/ẩn badge
+		}
+
+		public JButton getButton() {
+			return button;
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+
+			if (notificationCount > 0) {
+				var g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				var text = String.valueOf(notificationCount);
+
+				// Lấy kích thước của chính NotifiedButtonPanel
+				var wrapperWidth = getWidth();
+				var wrapperHeight = getHeight();
+
+				// Tính vị trí biểu tượng (góc trên bên phải của wrapper)
+				var badgeSize = 18;
+
+				// Tọa độ x: Đặt ở góc phải của wrapper, lùi lại 1/2 kích thước badge để badge không bị cắt
+				var x = wrapperWidth - badgeSize;
+				// Tọa độ y: Đặt ở mép trên của wrapper (y=0)
+				var y = 0;
+
+				// Hoặc: Nếu muốn badge nằm hoàn toàn trong nút:
+				// var x = wrapperWidth - badgeSize / 2;
+				// var y = 0 - badgeSize / 2;
+
+				// 1. Vẽ hình tròn nền
+				g2.setColor(BADGE_COLOR);
+				g2.fillOval(x, y, badgeSize, badgeSize);
+				// ... (phần vẽ viền và text không đổi) ...
+
+				g2.dispose();
+			}
+		}
+	}
+	public void updateApprovalBadgeCount() {
+		var count = 0;
+		var monthStr = (String) cmbMonthYear.getSelectedItem();
+		int month = 0, year = 0;
+		if (monthStr != null && monthStr.contains("/")) {
+			var parts = monthStr.replace("Tháng", "").split("/");
+			month = Integer.parseInt(parts[0].trim());
+			year = Integer.parseInt(parts[1].trim());
+		}
+
+		var keyword = txtSearch.getText().trim();
+		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
+		var restaurantId = 0;
+		if (selectedRestaurant != null) {
+			restaurantId = selectedRestaurant.getId();
+		}
+		if (keyword.isEmpty() || "Tìm kiếm theo tên nhân viên...".equals(keyword)) {
+			keyword = "";
+		}
+		try {
+			// Lấy số lượng bản ghi OT đang chờ duyệt
+			var pendingList = otJunctionService.getOtConfirmList(keyword, restaurantId, month, year);
+			count = pendingList != null ? pendingList.size() : 0;
+		} catch (Exception e) {
+			System.err.println("Lỗi khi đếm OT chờ duyệt: " + e.getMessage());
+		}
+
+		if (btnApproveWrapper != null) {
+			btnApproveWrapper.setNotificationCount(count);
+
+			if (count > 0) {
+				btnApproveWrapper.getButton().setText("Duyệt OT (" + count + ")");
+			} else {
+				btnApproveWrapper.getButton().setText("Duyệt Chấm Công");
+			}
+		}
 	}
 }

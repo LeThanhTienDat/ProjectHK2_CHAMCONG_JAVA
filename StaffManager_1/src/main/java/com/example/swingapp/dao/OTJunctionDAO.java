@@ -24,7 +24,7 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 			ps.setInt(2, o.getOtTypeId());
 			ps.setTime(3, o.getOtCheckInTime());
 			ps.setTime(4, o.getOtCheckOutTime());
-			ps.setBoolean(5, o.isOtConfirm());
+			ps.setString(5, o.getOtConfirm());
 			return ps.executeUpdate() > 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -39,7 +39,7 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 				var ps = conn.prepareStatement(sql)) {
 			ps.setTime(1, o.getOtCheckInTime());
 			ps.setTime(2, o.getOtCheckOutTime());
-			ps.setBoolean(3, o.isOtConfirm());
+			ps.setString(3, o.getOtConfirm());
 			ps.setInt(4, o.getId());
 			return ps.executeUpdate() > 0;
 		} catch (SQLException e) {
@@ -75,7 +75,7 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 						rs.getInt("ot_type_id"),
 						rs.getTime("ot_check_in_time"),
 						rs.getTime("ot_check_out_time"),
-						rs.getBoolean("ot_confirm")
+						rs.getString("ot_confirm")
 						));
 			}
 		} catch (SQLException e) {
@@ -97,7 +97,7 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 						rs.getInt("ot_type_id"),
 						rs.getTime("ot_check_in_time"),
 						rs.getTime("ot_check_out_time"),
-						rs.getBoolean("ot_confirm")
+						rs.getString("ot_confirm")
 						));
 			}
 		} catch (SQLException e) {
@@ -268,5 +268,75 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 		return list;
 	}
 
+	public boolean confirmOt(int otJunctionId) {
+		var sql = """
+					Update tbl_Ot_Junction
+					set ot_confirm = 'confirmed'
+					where id = ?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql);
+				){
+			ps.setInt(1, otJunctionId);
+			var rs=ps.executeUpdate();
+			return rs >0;
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	public boolean rejectOt(int otJunctionId) {
+		var sql = """
+					Update tbl_Ot_Junction
+					set ot_confirm = 'rejected'
+					where id = ?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql);
+				){
+			ps.setInt(1, otJunctionId);
+			var rs=ps.executeUpdate();
+			return rs >0;
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public List<Object[]> getOtConfirmList(String keyword, int restaurantId, int month, int year){
+		List<Object[]> list = new ArrayList();
+		var sql = "{CALL SP_GetOtConfirmList (?,?,?,?)}";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareCall(sql);
+				){
+			ps.setString(1,keyword);
+			ps.setInt(2, restaurantId);
+			ps.setInt(3, month);
+			ps.setInt(4, year);
+			var rs = ps.executeQuery();
+			while(rs.next()) {
+				var item = new Object[15];
+				item[0] = rs.getInt("restaurant_id");
+				item[1] =rs.getString("restaurant_name");
+				item[2] =rs.getInt("employee_id");
+				item[3] =rs.getString("employee_name");
+				item[4] =rs.getString("employee_phone");
+				item[5] =rs.getInt("work_schedule_id");
+				item[6] =rs.getDate("work_date");
+				item[7] =rs.getInt("ot_junction_id");
+				item[8] =rs.getTimestamp("ot_check_in_time");
+				item[9] =rs.getTimestamp("ot_check_out_time");
+				item[10] =rs.getString("ot_confirm");
+				item[11] =rs.getInt("ot_type_id");
+				item[12] =rs.getString("ot_name");
+				item[13] =rs.getTime("ot_start");
+				item[14] =rs.getTime("ot_end");
+				list.add(item);
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
 
 }

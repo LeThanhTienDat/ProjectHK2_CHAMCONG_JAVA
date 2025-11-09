@@ -61,12 +61,20 @@ public class ShiftDetailsPanel extends JPanel {
 		shiftLabel.setForeground(PRIMARY_BLUE.darker());
 
 		var leftPanel = createColumnPanel();
-		leftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0)); // canh giữa
-		leftPanel.add(shiftLabel);
-		leftPanel.setMinimumSize(new Dimension(170, 0));
+		leftPanel.setLayout(new GridLayout(2, 1, 0, 8));
+		var labelContainer = new JPanel(new GridLayout(1, 1));
+		labelContainer.setOpaque(false);
+		labelContainer.add(shiftLabel);
+
+		var emptyButtonContainer = new JPanel();
+		emptyButtonContainer.setOpaque(false);
+		emptyButtonContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+		leftPanel.setMinimumSize(new Dimension(270, 0));
+		leftPanel.add(labelContainer);
+		leftPanel.add(emptyButtonContainer);
 
 		gbc.gridx = 0;
-		gbc.weightx = 0.4;
+		gbc.weightx = 0;
 		add(leftPanel, gbc);
 
 		// ========== CỘT 2: CHECK IN ==========
@@ -154,7 +162,7 @@ public class ShiftDetailsPanel extends JPanel {
 		inPanel.add(btnCheckIn);
 
 		gbc.gridx = 1;
-		gbc.weightx = 0.3;
+		gbc.weightx = 0.5;
 		add(inPanel, gbc);
 
 		// ========== CỘT 3: CHECK OUT ==========
@@ -242,7 +250,7 @@ public class ShiftDetailsPanel extends JPanel {
 		outPanel.add(btnCheckOut);
 
 		gbc.gridx = 2;
-		gbc.weightx = 0.3;
+		gbc.weightx = 0.5;
 		add(outPanel, gbc);
 
 		// Kích thước cố định

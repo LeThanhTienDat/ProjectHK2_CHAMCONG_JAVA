@@ -48,7 +48,9 @@ public class EmployeeAdminPanel extends JPanel {
 	private JPanel tableCard;
 	private JComboBox<Restaurant> resFilter;
 	private boolean isInitializing = true;
-
+	private JPanel currentLegendPanel;
+	private int totalEmployees = 0;
+	private int totalNotContract = 0;
 	// Colors
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color ACCENT_BLUE = new Color(33, 150, 243);
@@ -128,6 +130,7 @@ public class EmployeeAdminPanel extends JPanel {
 		var contentPanel = new JPanel(new BorderLayout(0, 15));
 		contentPanel.setBackground(BG_LIGHT);
 
+
 		// Form panel
 		formPanel = new EmployeeFormPanel(this::handleFormSave, this::handleFormCancel);
 		formPanel.setVisible(false);
@@ -138,14 +141,26 @@ public class EmployeeAdminPanel extends JPanel {
 		tableCard.setBackground(CARD_WHITE);
 		tableCard.setBorder(new EmptyBorder(15, 15, 15, 15));
 
+		var topPanel = new JPanel(new BorderLayout());
+		topPanel.setOpaque(false);
+
+
 		var header = new JLabel("DANH SÁCH NHÂN VIÊN");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
-		tableCard.add(header, BorderLayout.NORTH);
+
+		currentLegendPanel = createLegendPanel();
+
+		var northContentPanel = new JPanel();
+		northContentPanel.setLayout(new BorderLayout());
+		northContentPanel.setOpaque(false);
+		northContentPanel.add(header, BorderLayout.NORTH);
+		northContentPanel.add(currentLegendPanel, BorderLayout.CENTER);
+		tableCard.add(northContentPanel, BorderLayout.NORTH);
 
 		String[] cols = { "Mã NV", "Họ tên", "Giới tính", "Ngày sinh", "Chức danh",
-				"Lương", "Ngày vào làm", "Trạng thái hợp đồng","Hoạt động", "Điện thoại", "Nhà Hàng", "Email", "rawId" };
+				"Lương", "Bắt đầu hợp đồng", "Trạng thái hợp đồng","Hoạt động", "Điện thoại", "Nhà Hàng", "Email", "rawId" };
 
 		model = new DefaultTableModel(cols, 0) {
 			@Override
@@ -435,6 +450,8 @@ public class EmployeeAdminPanel extends JPanel {
 
 	// ===== DATA METHODS =====
 	private void loadEmployeeData(String keyword) {
+		totalEmployees = 0;
+		totalNotContract = 0;
 		var list = new ArrayList<Object[]>();
 		var sql = """
 				SELECT e.id, e.name, e.role, e.gender, e.dob,
@@ -467,6 +484,7 @@ public class EmployeeAdminPanel extends JPanel {
 
 			var rs = pst.executeQuery();
 			model.setRowCount(0);
+
 			while (rs.next()) {
 				var row = new Object[13];
 				Double salary = rs.getObject("salary") == null ? 0.0 : rs.getDouble("salary");
@@ -484,7 +502,13 @@ public class EmployeeAdminPanel extends JPanel {
 				row[11] = rs.getString("email");
 				row[12] = rs.getInt("id");
 				model.addRow(row);
+				totalEmployees++;
+				var contractStatus = rs.getString("contract_status");
+				if (contractStatus == null || contractStatus.trim().isEmpty() || "Expired".equalsIgnoreCase(contractStatus)) {
+					totalNotContract++;
+				}
 			}
+			reloadLegendPanel();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this, "Lỗi load dữ liệu: " + ex.getMessage());
@@ -518,6 +542,8 @@ public class EmployeeAdminPanel extends JPanel {
 		}
 	}
 	private void loadEmployeeDataByRestaurant(int restaurantId, String keyword) {
+		totalEmployees = 0;
+		totalNotContract =0;
 		var hasKeyword = keyword != null && !keyword.trim().isEmpty() &&
 				!"Tìm kiếm nhân viên...".equals(keyword.trim());
 
@@ -587,7 +613,13 @@ public class EmployeeAdminPanel extends JPanel {
 				row[11] = rs.getString("email");
 				row[12] = rs.getInt("id");
 				model.addRow(row);
+				totalEmployees++;
+				var contractStatus = rs.getString("contract_status");
+				if (contractStatus == null || contractStatus.trim().isEmpty() || "Expired".equalsIgnoreCase(contractStatus)) {
+					totalNotContract++;
+				}
 			}
+			reloadLegendPanel();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu theo nhà hàng: " + ex.getMessage());
@@ -739,6 +771,105 @@ public class EmployeeAdminPanel extends JPanel {
 			}
 		} else {
 			loadEmployeeDataByRestaurant(selectedRestaurant.getId(), hasKeyword ? keyword : "");
+		}
+	}
+
+	public JPanel createLegendPanel() {
+		var legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+		legend.setBackground(CARD_WHITE);
+		legend.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1),
+				new EmptyBorder(10, 0, 10, 0)));
+		var viewTotalEmployees = String.valueOf(totalEmployees);
+		var viewTotalNotContract = String.valueOf(totalNotContract);
+		String[][] legends = {
+				{"Tổng nhân viên: ", viewTotalEmployees }
+
+		};
+
+		for (String[] lg : legends) {
+			var icon = new JLabel(lg[0]);
+			icon.setFont(new Font("Segoe UI", Font.BOLD, 12));
+			icon.setForeground(PRIMARY_BLUE);
+			icon.setPreferredSize(new Dimension(100, 20));
+			icon.setToolTipText(lg[1]);
+
+			var desc = new JLabel(lg[1]);
+			desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+			desc.setForeground(TEXT_PRIMARY);
+
+			var item = new JPanel(new BorderLayout(5, 0));
+			item.add(icon, BorderLayout.WEST);
+			item.add(desc, BorderLayout.CENTER);
+			legend.add(item);
+		}
+
+		var totalNotContract = new JLabel();
+		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		totalNotContract.setForeground(PRIMARY_BLUE);
+		totalNotContract.setPreferredSize(new Dimension(170, 20));
+		totalNotContract.setText("Chưa có hợp đồng / Hết hạn: ");
+
+		var desc = new JLabel();
+		desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		desc.setForeground(TEXT_PRIMARY);
+		desc.setText(viewTotalNotContract);
+
+		var item = new JPanel(new BorderLayout(5, 0));
+		item.add(totalNotContract, BorderLayout.WEST);
+		item.add(desc, BorderLayout.CENTER);
+		legend.add(item);
+		var summaryLegend = new JLabel("Chú thích: ");
+		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		summaryLegend.setForeground(PRIMARY_BLUE);
+		legend.add(summaryLegend);
+
+		var redNote = new JLabel("Hết hạn hợp đồng", new ColorSquareIcon(DANGER_RED.brighter().brighter()), SwingConstants.LEFT);
+		redNote.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		redNote.setForeground(TEXT_PRIMARY);
+		legend.add(redNote);
+
+		return legend;
+	}
+	public void reloadLegendPanel() {
+		var northContentPanel = (JPanel) tableCard.getComponent(0);
+		if (currentLegendPanel != null) {
+			northContentPanel.remove(currentLegendPanel);
+		}
+		currentLegendPanel = createLegendPanel();
+		northContentPanel.add(currentLegendPanel, BorderLayout.CENTER);
+		northContentPanel.revalidate();
+		northContentPanel.repaint();
+	}
+
+	private static class ColorSquareIcon implements javax.swing.Icon {
+		private final Color color;
+		private final int size = 12; // Kích thước của ô vuông
+
+		public ColorSquareIcon(Color color) {
+			this.color = color;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+			var g2d = (Graphics2D) g.create();
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2d.setColor(color);
+			// Vẽ hình chữ nhật với màu nền nhẹ hơn để mô phỏng màu trong bảng
+			g2d.fillRect(x, y, size, size);
+			g2d.setColor(Color.GRAY);
+			g2d.drawRect(x, y, size, size); // Vẽ viền nhẹ
+			g2d.dispose();
+		}
+
+		@Override
+		public int getIconWidth() {
+			return size;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return size;
 		}
 	}
 }

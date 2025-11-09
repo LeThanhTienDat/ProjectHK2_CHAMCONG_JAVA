@@ -174,42 +174,50 @@ public class LoginForm extends JFrame {
 		var password = new String(txtPassword.getPassword());
 
 		if (username.isEmpty() || password.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập tài khoản và mật khẩu!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(this,
+					"Vui lòng nhập đầy đủ tài khoản và mật khẩu!",
+					"Cảnh báo",
+					JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 
 		var dao = new AccountDAO();
-		var accounts = dao.getAll();
+		var account = dao.findByUsername(username); // phương thức đơn giản hơn
 
-		var found = accounts.stream()
-				.filter(a -> a.getAccountName().equalsIgnoreCase(username))
-				.findFirst()
-				.orElse(null);
-
-		if (found == null) {
-			JOptionPane.showMessageDialog(this, "Tài khoản không tồn tại!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+		if (account == null) {
+			JOptionPane.showMessageDialog(this,
+					"Tài khoản không tồn tại!",
+					"Lỗi đăng nhập",
+					JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
-		var hashInput = PasswordUtils.hashPassword(password, found.getSalt());
-		if (hashInput.equals(found.getPassword())) {
-			JOptionPane.showMessageDialog(this, "Đăng nhập thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+		// Hash mật khẩu người dùng nhập vào
+		var hashInput = PasswordUtils.hashPassword(password, account.getSalt());
 
-			if ("ADMIN".equalsIgnoreCase(found.getAuth())) {
-				new Admin.Admin().setVisible(true);
-			} else {
-				var frame = new JFrame("Trang nhân viên");
-				frame.setContentPane(new EmployeePanel(found.getEmployeeId()));
-				frame.setSize(1100, 700);
-				frame.setLocationRelativeTo(null);
-				frame.setVisible(true);
-			}
-
-			dispose();
-		} else {
-			JOptionPane.showMessageDialog(this, "Sai mật khẩu!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+		if (!hashInput.equals(account.getPassword())) {
+			JOptionPane.showMessageDialog(this,
+					"Sai mật khẩu!",
+					"Lỗi đăng nhập",
+					JOptionPane.ERROR_MESSAGE);
+			return;
 		}
+
+		// Đăng nhập thành công
+		JOptionPane.showMessageDialog(this,
+				"Đăng nhập thành công!",
+				"Thành công",
+				JOptionPane.INFORMATION_MESSAGE);
+
+		if ("ADMIN".equalsIgnoreCase(account.getAuth())) {
+			new Admin.Admin().setVisible(true);
+		} else {
+			new JFrame("Trang nhân viên").setVisible(true);
+		}
+
+		dispose();
 	}
+
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> new LoginForm().setVisible(true));

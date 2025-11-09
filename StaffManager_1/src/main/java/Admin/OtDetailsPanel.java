@@ -3,6 +3,7 @@ package Admin;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -34,8 +35,16 @@ public class OtDetailsPanel extends JPanel {
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color LIGHT_BLUE = new Color(227, 242, 253); // đúng giờ
 	private static final Color LIGHT_RED = new Color(255, 235, 238);  // trễ / sớm
+	private static final Color BG_LIGHT = new Color(250, 251, 255);
+	private static final Color CARD_WHITE = new Color(255, 255, 255);
+	private static final Color TEXT_PRIMARY = new Color(33, 33, 33);
+	private static final Color DANGER_RED = new Color(244, 67, 54);
+	private static final Color TEAL = new Color(0, 150, 136);
+	private static final Color SUCCESS_GREEN = new Color(76, 175, 80);
+	private static final Color WARNING_ORANGE = new Color(255, 152, 0);
 	private Color inBg;
 	private Color outBg;
+	final int FIXED_COL_WIDTH = 180;
 	private final OTJunctionService otJunctionService = new OTJunctionService();
 	public OtDetailsPanel(WorkSchedule ws, String shiftFullName, Shift shift, OTJunction ot, OTType otType, AttendanceFormPanel parent) {
 		setLayout(new GridBagLayout());
@@ -50,7 +59,32 @@ public class OtDetailsPanel extends JPanel {
 		gbc.gridy = 0;
 
 		// ========== CỘT 1 ==========
-		var statusText = (ot.getOtCheckInTime() != null || ot.getOtCheckOutTime() != null) ? "Đã chấm công" : "Chưa chấm công";
+		var isConfirmed = ot.getOtConfirm();
+		var isOtConfirmText = "Đã duyệt";
+		var isNotOtConfirmText = "Chưa duyệt";
+		var isRejectedText = "Đã từ chối";
+		var confirmOtStatus = "";
+
+		switch (isConfirmed) {
+		case "confirmed":
+			confirmOtStatus = isOtConfirmText;
+			break;
+		case "waiting":
+			confirmOtStatus = isNotOtConfirmText;
+			break;
+		case "rejected":
+			confirmOtStatus = isRejectedText;
+			break;
+		case null:
+		default:
+			break;
+		}
+
+		var checkInStatus = (ot.getOtCheckInTime() != null || ot.getOtCheckOutTime() != null)
+				? "Đã chấm công"
+						: "Chưa chấm công";
+
+		var statusText = checkInStatus + " - " + confirmOtStatus;
 		var otFullName = (otType != null) ?
 				otType.getOtName() + " (" + otType.getOtStart() + " - " + otType.getOtEnd() + ")"
 				: "";
@@ -58,12 +92,92 @@ public class OtDetailsPanel extends JPanel {
 		otLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		otLabel.setForeground(PRIMARY_BLUE.darker());
 
+		//Confirm btn
+		final var isFinalized = isConfirmed.equals("confirmed") || isConfirmed.equals("rejected");
+		var buttonText = isConfirmed.equals("confirmed") ? "ĐÃ DUYỆT"
+				: isConfirmed.equals("rejected") ? "ĐÃ TỪ CHỐI"
+						: "DUYỆT OT";
+		// Màu xám khi đã duyệt, màu xanh khi chưa
+		var buttonColor = isConfirmed.equals("confirmed") ? new Color(150, 150, 150) : PRIMARY_BLUE;
+		var btnConfirmOrCancel = button(buttonText, buttonColor, 110);
+		btnConfirmOrCancel.setEnabled(!isFinalized);
+
+		btnConfirmOrCancel.addActionListener(e -> {
+			var otJunctionId = ot.getId();
+			var action = "Duyệt";
+			var newStatus = true; // Chuyển sang trạng thái đã duyệt
+
+			var confirmDialog = JOptionPane.showConfirmDialog(
+					this,
+					"Bạn có chắc chắn muốn duyệt ca này ?",
+					action + " Lệnh OT",
+					JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE
+					);
+
+			if (confirmDialog == JOptionPane.YES_OPTION) {
+				var success = otJunctionService.confirmOt(otJunctionId);
+
+				if(success) {
+					JOptionPane.showMessageDialog(this, action + " OT thành công!");
+					parent.reloadForm();
+					parent.notifyDataChanged();
+				}else {
+					JOptionPane.showMessageDialog(this, action + " OT Thất bại, xin kiểm tra lại!");
+				}
+			}
+		});
+
+		//Reject btn
+		var rejectText = isConfirmed.equals("rejected") ? "ĐÃ TỪ CHỐI" : "TỪ CHỐI";
+		var rejectColor = (isConfirmed.equals("rejected") || isConfirmed.equals("confirmed"))
+				? new Color(150, 150, 150) : DANGER_RED; // Màu đỏ khi đang chờ
+		var btnReject = button(rejectText, rejectColor, 110);
+		btnReject.setEnabled(isConfirmed.equals("waiting")); // Chỉ cho phép từ chối khi đang chờ
+
+		btnReject.addActionListener(e -> {
+			var otJunctionId = ot.getId();
+			var action = "Từ chối";
+
+			var confirmDialog = JOptionPane.showConfirmDialog(
+					this,
+					"Bạn có chắc chắn muốn từ chối ca OT này?",
+					action + " Lệnh OT",
+					JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE
+					);
+
+			if (confirmDialog == JOptionPane.YES_OPTION) {
+				var success = otJunctionService.rejectOt(otJunctionId);
+
+				if(success) {
+					JOptionPane.showMessageDialog(this, action + " OT thành công!");
+					parent.reloadForm();
+					parent.notifyDataChanged();
+				} else {
+					JOptionPane.showMessageDialog(this, action + " OT Thất bại, xin kiểm tra lại!");
+				}
+			}
+		});
+
 		var leftPanel = createColumnPanel();
-		leftPanel.add(otLabel);
-		leftPanel.setMinimumSize(new Dimension(170, 0));
+		leftPanel.setLayout(new GridLayout(2, 1, 0, 8));
+		var labelContainer = new JPanel(new GridLayout(1, 1));
+		labelContainer.setOpaque(false);
+		labelContainer.add(otLabel);
+		var buttonContainer = new JPanel();
+		buttonContainer.setOpaque(false);
+		buttonContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+		buttonContainer.add(btnConfirmOrCancel);
+		buttonContainer.add(btnReject);
+
+		leftPanel.add(labelContainer);
+		leftPanel.add(buttonContainer);
+
+		leftPanel.setMinimumSize(new Dimension(180, 0));
 
 		gbc.gridx = 0;
-		gbc.weightx = 0.4;
+		gbc.weightx = 0;
 		add(leftPanel, gbc);
 
 		// ========== CỘT 2: CHECK IN ==========
@@ -140,9 +254,10 @@ public class OtDetailsPanel extends JPanel {
 		inPanel.add(otInLabel);
 		inPanel.add(actualInLabel);
 		inPanel.add(btnCheckIn);
-
+		inPanel.setPreferredSize(new Dimension(FIXED_COL_WIDTH, 0));
+		inPanel.setMinimumSize(new Dimension(FIXED_COL_WIDTH, 0));
 		gbc.gridx = 1;
-		gbc.weightx = 0.3;
+		gbc.weightx = 0.5;
 		add(inPanel, gbc);
 
 		// ========== CỘT 3: CHECK OUT ==========
@@ -216,9 +331,10 @@ public class OtDetailsPanel extends JPanel {
 		outPanel.add(shiftOutLabel);
 		outPanel.add(actualOutLabel);
 		outPanel.add(btnCheckOut);
-
+		outPanel.setPreferredSize(new Dimension(FIXED_COL_WIDTH, 0));
+		outPanel.setMinimumSize(new Dimension(FIXED_COL_WIDTH, 0));
 		gbc.gridx = 2;
-		gbc.weightx = 0.3;
+		gbc.weightx = 0.5;
 		add(outPanel, gbc);
 
 		// Kích thước cố định

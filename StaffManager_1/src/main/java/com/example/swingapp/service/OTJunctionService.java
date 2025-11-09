@@ -50,5 +50,13 @@ public class OTJunctionService {
 	public List<Object[]> getAllOtRecordsForMonth(int year, int month){
 		return dao.getAllOtRecordsForMonth(year, month);
 	}
-
+	public boolean confirmOt(int otJunctionId) {
+		return dao.confirmOt(otJunctionId);
+	}
+	public boolean rejectOt(int otJunctionId) {
+		return dao.rejectOt(otJunctionId);
+	}
+	public List<Object[]> getOtConfirmList(String keyword, int restaurantId, int month, int year){
+		return dao.getOtConfirmList(keyword, restaurantId, month, year);
+	}
 }

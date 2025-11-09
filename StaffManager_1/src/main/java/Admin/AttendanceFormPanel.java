@@ -310,7 +310,7 @@ public class AttendanceFormPanel extends JPanel {
 
 						var otJunction = new OTJunction();
 						otJunction.setOtTypeId(selectedOT.getId());
-						otJunction.setOtConfirm(true);
+						otJunction.setOtConfirm("confirmed");
 
 						var getWorkScheduleId = service.checkWorkScheduleId(currentEmployeeId, currentDate);
 						if (getWorkScheduleId > 0) {

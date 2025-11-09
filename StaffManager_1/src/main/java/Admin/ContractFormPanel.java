@@ -2,6 +2,7 @@ package Admin;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -12,10 +13,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -23,6 +26,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.example.swingapp.model.Employee;
 import com.example.swingapp.model.Restaurant;
+import com.example.swingapp.service.ContractService;
 import com.example.swingapp.service.EmployeeService;
 import com.example.swingapp.service.RestaurantService;
 
@@ -42,6 +46,7 @@ public class ContractFormPanel extends JPanel {
 	private int employeeId;
 	private boolean addMode = true;
 	private int editingRow = -1;
+	private final ContractService contractService = new ContractService();
 
 	public ContractFormPanel(ActionListener onSave, ActionListener onCancel) {
 		setLayout(new BorderLayout());
@@ -93,6 +98,8 @@ public class ContractFormPanel extends JPanel {
 		cmbEmployee.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
 				new EmptyBorder(8, 12, 8, 12)));
+
+		cmbEmployee.setRenderer(new EmployeeListRenderer());
 		var gbc_cmbEmployee = new GridBagConstraints();
 		gbc_cmbEmployee.fill = GridBagConstraints.HORIZONTAL;
 		gbc_cmbEmployee.insets = new Insets(0, 0, 15, 0);
@@ -370,5 +377,49 @@ public class ContractFormPanel extends JPanel {
 		case "Nhân viên" -> "nhanvien";
 		default -> displayName.toLowerCase();
 		};
+	}
+
+	/**
+	 * Renderer tùy chỉnh để hiển thị tên nhân viên và tô màu nhân viên đã có HĐ.
+	 */
+	private class EmployeeListRenderer extends DefaultListCellRenderer {
+		@Override
+		public Component getListCellRendererComponent(
+				JList<?> list,
+				Object value,
+				int index,
+				boolean isSelected,
+				boolean cellHasFocus) {
+
+			super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+			if (value instanceof Employee employee) {
+				setText(employee.getName());
+
+				try {
+					// 🔥 LOGIC KIỂM TRA TRẠNG THÁI HỢP ĐỒNG
+					var hasActiveContract = contractService.hasActiveContract(employee.getId());
+
+					if (hasActiveContract) {
+						var disabledTextColor = new Color(150, 150, 150);
+
+						if (!isSelected) {
+							setForeground(disabledTextColor);
+						} else {
+							setBackground(list.getSelectionBackground());
+							setForeground(list.getSelectionForeground());
+						}
+					} else {
+						if (!isSelected) {
+							setBackground(list.getBackground());
+							setForeground(list.getForeground());
+						}
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			return this;
+		}
 	}
 }

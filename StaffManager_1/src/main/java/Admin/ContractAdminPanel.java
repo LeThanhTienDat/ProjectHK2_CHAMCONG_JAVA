@@ -10,12 +10,15 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.sql.Date;
 import java.text.MessageFormat;
 import java.util.Arrays;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -27,7 +30,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import com.example.swingapp.model.Contract;
+import com.example.swingapp.model.Restaurant;
 import com.example.swingapp.service.ContractService;
+import com.example.swingapp.service.RestaurantService;
 import com.example.swingapp.util.DBConnection;
 
 public class ContractAdminPanel extends JPanel {
@@ -39,6 +44,13 @@ public class ContractAdminPanel extends JPanel {
 	private JTextField txtSearch;
 	private JButton btnAdd;
 	private ContractFormPanel formPanel;
+	private JComboBox<String> cmbDate;
+	private JComboBox<Restaurant> resFilter;
+	private boolean isInitializing = true;
+	private int totalEmployees = 0;
+	private int totalNotContract = 0;
+	private JPanel currentLegendPanel;
+	private JPanel tableCard;
 
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color ACCENT_BLUE = new Color(33, 150, 243);
@@ -64,12 +76,41 @@ public class ContractAdminPanel extends JPanel {
 		searchPanel.setPreferredSize(new Dimension(0, 70));
 		add(searchPanel, BorderLayout.NORTH);
 
-		txtSearch = styledField("Tìm kiếm theo tên nhân viên hoặc vị trí...", 400);
+		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 400);
+		txtSearch.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent e) {
+				if (txtSearch.getText().equals("Tìm kiếm theo tên nhân viên...")) {
+					txtSearch.setText("");
+					txtSearch.setForeground(TEXT_PRIMARY);
+				}
+			}
+			@Override
+			public void focusLost(FocusEvent e) {
+				if (txtSearch.getText().isEmpty()) {
+					txtSearch.setText("Tìm kiếm theo tên nhân viên...");
+					txtSearch.setForeground(Color.GRAY);
+				}
+			}
+		});
 		txtSearch.setColumns(30);
-		searchPanel.add(txtSearch);
+
+		resFilter = new JComboBox<Restaurant>();
+		resFilter.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		resFilter.setBackground(new Color(248, 250, 252));
+		resFilter.addActionListener(e -> onRestaurantSelected());
+		resFilter.setPreferredSize(new Dimension(200, 36));
+		resFilter.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+				new EmptyBorder(8, 12, 8, 12)));
+
+		renderRestaurant();
 
 		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
 		btnSearch.addActionListener(e -> search());
+		searchPanel.add(txtSearch);
+		searchPanel.add(new JLabel("Nhà hàng: "));
+		searchPanel.add(resFilter);
 		searchPanel.add(btnSearch);
 
 		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
@@ -80,14 +121,60 @@ public class ContractAdminPanel extends JPanel {
 		var content = new JPanel();
 		content.setBackground(BG_LIGHT);
 		content.setLayout(new BorderLayout(0, 15));
-		add(content, BorderLayout.CENTER);
+
 
 		formPanel = new ContractFormPanel(this::onSave, this::onCancel);
 		formPanel.setVisible(false);
 		content.add(formPanel, BorderLayout.NORTH);
 
-		var tableCard = createTableCard();
+		tableCard = new JPanel(new BorderLayout());
+		tableCard.setBackground(CARD_WHITE);
+		tableCard.setBorder(new EmptyBorder(15, 15, 15, 15));
+		var topPanel = new JPanel(new BorderLayout());
+		topPanel.setOpaque(false);
+
+		var header = new JLabel("DANH SÁCH HỢP ĐỒNG LAO ĐỘNG");
+		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		header.setForeground(PRIMARY_BLUE);
+		header.setBorder(new EmptyBorder(0, 0, 15, 0));
+
+		currentLegendPanel = createLegendPanel();
+
+		var northContentPanel = new JPanel();
+		northContentPanel.setLayout(new BorderLayout());
+		northContentPanel.setOpaque(false);
+		northContentPanel.add(header, BorderLayout.NORTH);
+		northContentPanel.add(currentLegendPanel, BorderLayout.CENTER);
+		tableCard.add(northContentPanel, BorderLayout.NORTH);
+
+		String[] cols = { "Contract ID", "Employee Name", "Start Date", "End Date", "Role", "Salary", "Contract Status", "Restaurant Name" };
+		model = new DefaultTableModel(cols, 0) {
+			@Override
+			public Class<?> getColumnClass(int columnIndex) {
+				return switch (columnIndex) {
+				case 5 -> Integer.class;
+				case 2, 3 -> Date.class;
+				default -> String.class;
+				};
+			}
+
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return false;
+			}
+		};
+
+		table = new JTable(model);
+		styleTable(table);
+		loadContractTable();
+		var scroll = new JScrollPane(table);
+		scroll.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+		scroll.getViewport().setBackground(CARD_WHITE);
+		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		tableCard.add(scroll, BorderLayout.CENTER);
+
 		content.add(tableCard, BorderLayout.CENTER);
+		add(content, BorderLayout.CENTER);
 
 		// ==== ACTIONS (BOTTOM) ====
 		var actions = new JPanel();
@@ -116,23 +203,6 @@ public class ContractAdminPanel extends JPanel {
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 		card.add(header, BorderLayout.NORTH);
 
-		String[] cols = { "Contract ID", "Employee Name", "Start Date", "End Date", "Role", "Salary", "Contract Status", "Restaurant Name" };
-		model = new DefaultTableModel(cols, 0) {
-			@Override
-			public Class<?> getColumnClass(int columnIndex) {
-				return switch (columnIndex) {
-				case 5 -> Integer.class;
-				case 2, 3 -> Date.class;
-				default -> String.class;
-				};
-			}
-
-			@Override
-			public boolean isCellEditable(int row, int column) {
-				return false;
-			}
-		};
-		loadContractTable("");
 		table = new JTable(model);
 		styleTable(table);
 
@@ -308,12 +378,7 @@ public class ContractAdminPanel extends JPanel {
 	}
 
 	private void search() {
-		var q = txtSearch.getText().trim();
-		if (q.isEmpty()) {
-			loadContractTable("");
-		} else {
-			loadContractTable(q);
-		}
+		loadContractTable();
 	}
 
 	private void addNew() {
@@ -351,16 +416,26 @@ public class ContractAdminPanel extends JPanel {
 		}
 	}
 
-	private void loadContractTable(String keyword) {
+	private void loadContractTable() {
+		var keyword = txtSearch.getText().trim();
+		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
+		var restaurantId = 0;
+		if (selectedRestaurant != null) {
+			restaurantId = selectedRestaurant.getId();
+		}
+		if (keyword.isEmpty() || "Tìm kiếm theo tên nhân viên...".equals(keyword)) {
+			keyword = "";
+		}
+
 		try (var conn = DBConnection.getConnection();
-				var stmt = conn.prepareCall("{CALL SP_GetContractInfo(?)}")) {
+				var stmt = conn.prepareCall("{CALL SP_GetContractInfo(?,?)}")) {
 
 			if (keyword == null || keyword.trim().isEmpty()) {
 				stmt.setNull(1, java.sql.Types.NVARCHAR);
 			} else {
 				stmt.setString(1, keyword.trim());
 			}
-
+			stmt.setInt(2, restaurantId);
 			var rs = stmt.executeQuery();
 			model.setRowCount(0);
 
@@ -436,11 +511,93 @@ public class ContractAdminPanel extends JPanel {
 		}
 		formPanel.setVisible(false);
 		btnAdd.setVisible(true);
-		loadContractTable("");
+		loadContractTable();
 	}
 
 	private void onCancel(ActionEvent e) {
 		formPanel.setVisible(false);
 		btnAdd.setVisible(true);
 	}
+
+	private void renderRestaurant() {
+
+		try {
+			var restaurantService = new RestaurantService();
+			var restaurants = restaurantService.getAll();
+			resFilter.removeAllItems();
+			resFilter.addItem(new Restaurant(0, "Tất Cả Nhà Hàng", 0));
+			for (Restaurant r : restaurants) {
+				resFilter.addItem(r);
+			}
+			resFilter.setSelectedIndex(0);
+			isInitializing = false;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(this,
+					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
+					"Lỗi", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void onRestaurantSelected() {
+		if (isInitializing) {
+			return;
+		}
+		loadContractTable();
+	}
+
+	public JPanel createLegendPanel() {
+		var legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+		legend.setBackground(CARD_WHITE);
+		legend.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1),
+				new EmptyBorder(10, 0, 10, 0)));
+		var viewTotalEmployees = String.valueOf(totalEmployees);
+		var viewTotalNotContract = String.valueOf(totalNotContract);
+		String[][] legends = {
+				{"Tổng nhân viên: ", viewTotalEmployees }
+
+		};
+
+		for (String[] lg : legends) {
+			var icon = new JLabel(lg[0]);
+			icon.setFont(new Font("Segoe UI", Font.BOLD, 12));
+			icon.setForeground(PRIMARY_BLUE);
+			icon.setPreferredSize(new Dimension(100, 20));
+			icon.setToolTipText(lg[1]);
+
+			var desc = new JLabel(lg[1]);
+			desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+			desc.setForeground(TEXT_PRIMARY);
+
+			var item = new JPanel(new BorderLayout(5, 0));
+			item.add(icon, BorderLayout.WEST);
+			item.add(desc, BorderLayout.CENTER);
+			legend.add(item);
+		}
+
+		var totalNotContract = new JLabel();
+		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		totalNotContract.setForeground(PRIMARY_BLUE);
+		totalNotContract.setPreferredSize(new Dimension(170, 20));
+		totalNotContract.setText("Chưa có hợp đồng / Hết hạn: ");
+
+		var desc = new JLabel();
+		desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		desc.setForeground(TEXT_PRIMARY);
+		desc.setText(viewTotalNotContract);
+
+		var item = new JPanel(new BorderLayout(5, 0));
+		item.add(totalNotContract, BorderLayout.WEST);
+		item.add(desc, BorderLayout.CENTER);
+		legend.add(item);
+		var summaryLegend = new JLabel("Tổng hợp: ");
+		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		summaryLegend.setForeground(PRIMARY_BLUE);
+		legend.add(summaryLegend);
+
+
+		return legend;
+	}
+
 }

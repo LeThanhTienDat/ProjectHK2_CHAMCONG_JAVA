@@ -22,6 +22,10 @@
 	</repositories>
 
     <dependencies>
+    <dependency>
+    <groupId>org.mindrot</groupId>
+    <artifactId>jbcrypt</artifactId>
+    <version>0.4</version> </dependency>
 
         <!-- ✅ JDBC driver MySQL (ổn định nhất cho Eclipse & Maven Central) -->
         <!-- SQL Server JDBC Driver -->
