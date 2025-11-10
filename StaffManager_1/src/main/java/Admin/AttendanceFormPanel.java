@@ -74,10 +74,10 @@ public class AttendanceFormPanel extends JPanel {
 		var addPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
 		addPanel.setOpaque(false);
 
-		btnAddShift = createButton("Thêm ca làm", PRIMARY_BLUE, 110);
+		btnAddShift = createButton("Add shift", PRIMARY_BLUE, 110);
 		btnAddShift.addActionListener(e -> onAddShift());
 
-		btnAddOT = createButton("Thêm OT", PRIMARY_BLUE, 110);
+		btnAddOT = createButton("Add OT", PRIMARY_BLUE, 110);
 		btnAddOT.addActionListener(e -> onAddOT());
 
 		addPanel.add(btnAddShift);
@@ -88,7 +88,6 @@ public class AttendanceFormPanel extends JPanel {
 		shiftListPanel.setLayout(new BoxLayout(shiftListPanel, BoxLayout.Y_AXIS));
 		shiftListPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
 
-		// 👇 Bọc shiftListPanel trong wrapper để dính top
 		var wrapper = new JPanel(new BorderLayout());
 		wrapper.setOpaque(false);
 		wrapper.add(shiftListPanel, BorderLayout.NORTH);
@@ -104,12 +103,11 @@ public class AttendanceFormPanel extends JPanel {
 
 		var actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actions.setOpaque(false);
-		btnCancel = createButton("Đóng", DANGER_RED,110);
-		btnSave = createButton("Lưu", PRIMARY_BLUE,110);
+		btnCancel = createButton("Close", DANGER_RED,110);
+		btnSave = createButton("Save", PRIMARY_BLUE,110);
 		btnSave.addActionListener(onSave);
 		btnCancel.addActionListener(onCancel);
 		actions.add(btnCancel);
-		//		actions.add(btnSave);
 
 		var centerPanel = new JPanel(new BorderLayout());
 		centerPanel.setOpaque(false);
@@ -120,14 +118,13 @@ public class AttendanceFormPanel extends JPanel {
 		add(actions, BorderLayout.SOUTH);
 	}
 
-	// --- Separate logic methods (để WindowBuilder không lỗi lambda)
 	public void onAddShift() {
 		var checkWorkSchedule = service.checkWorkScheduleId(currentEmployeeId, currentDate);
 		var checkShift = service.checkShiftId(currentEmployeeId, currentDate);
 		var shiftTypes = new ShiftService().getAll();
 
 		if(checkWorkSchedule > 0 && checkShift >0) {
-			JOptionPane.showMessageDialog(this, "Ca làm đã tồn tại!");
+			JOptionPane.showMessageDialog(this, "Shift already exists!");
 			return;
 		}else if(checkWorkSchedule > 0 && checkShift == 0){
 			var currentOtList = otTypeService.getAllByWorkScheduleId(checkWorkSchedule);
@@ -139,24 +136,22 @@ public class AttendanceFormPanel extends JPanel {
 					for (var ot : currentOtList) {
 						var otStart = ot.getOtStart().toLocalTime();
 						var otEnd = ot.getOtEnd().toLocalTime();
-
-						// Nếu giao nhau về thời gian
 						var overlap = shiftStart.isBefore(otEnd) && shiftEnd.isAfter(otStart);
 						if (overlap) {
-							return true; // loại bỏ ca này
+							return true;
 						}
 					}
 
-					return false; // giữ lại ca hợp lệ
+					return false;
 				});
 			}
-			showAddDialog("ca làm", shiftTypes,
+			showAddDialog("Shift ", shiftTypes,
 					s -> s.getShiftName() + " (" + s.getStartTime() + " - " + s.getEndTime() + ")",
 					selectedShift -> {
 						try {
 							var success = workScheduleService.addShift(checkWorkSchedule, selectedShift.getId());
 							if (success) {
-								JOptionPane.showMessageDialog(this, "Thêm ca làm thành công!");
+								JOptionPane.showMessageDialog(this, "Add shift successfully!");
 								var dateObj = java.time.LocalDate.parse(currentDate);
 								service.clearCache(dateObj.getYear(), dateObj.getMonthValue());
 								var newStatus = new DayWorkStatus(
@@ -172,11 +167,11 @@ public class AttendanceFormPanel extends JPanel {
 									onDataChanged.run();
 								}
 							} else {
-								JOptionPane.showMessageDialog(this, "Thêm ca làm thất bại!");
+								JOptionPane.showMessageDialog(this, "Add shift failed!");
 							}
 						} catch (Exception ex) {
 							ex.printStackTrace();
-							JOptionPane.showMessageDialog(this, "Lỗi khi thêm ca làm!");
+							JOptionPane.showMessageDialog(this, "Error adding shift!");
 						}
 					});
 		}else {
@@ -189,18 +184,16 @@ public class AttendanceFormPanel extends JPanel {
 					for (var ot : currentOtList) {
 						var otStart = ot.getOtStart().toLocalTime();
 						var otEnd = ot.getOtEnd().toLocalTime();
-
-						// Nếu giao nhau về thời gian
 						var overlap = shiftStart.isBefore(otEnd) && shiftEnd.isAfter(otStart);
 						if (overlap) {
-							return true; // loại bỏ ca này
+							return true;
 						}
 					}
 
-					return false; // giữ lại ca hợp lệ
+					return false;
 				});
 			}
-			showAddDialog("ca làm", shiftTypes,
+			showAddDialog("Shift ", shiftTypes,
 					s -> s.getShiftName() + " (" + s.getStartTime() + " - " + s.getEndTime() + ")",
 					selectedShift -> {
 						try {
@@ -210,7 +203,7 @@ public class AttendanceFormPanel extends JPanel {
 							workSchedule.setWorkDate(java.sql.Date.valueOf(currentDate));
 							var success = workScheduleService.add(workSchedule);
 							if (success) {
-								JOptionPane.showMessageDialog(this, "Thêm ca làm thành công!");
+								JOptionPane.showMessageDialog(this, "Add shift successfully!");
 								var dateObj = java.time.LocalDate.parse(currentDate);
 								service.clearCache(dateObj.getYear(), dateObj.getMonthValue());
 								var newStatus = new DayWorkStatus(
@@ -226,11 +219,11 @@ public class AttendanceFormPanel extends JPanel {
 									onDataChanged.run();
 								}
 							} else {
-								JOptionPane.showMessageDialog(this, "Thêm ca làm thất bại!");
+								JOptionPane.showMessageDialog(this, "Add shift failed!");
 							}
 						} catch (Exception ex) {
 							ex.printStackTrace();
-							JOptionPane.showMessageDialog(this, "Lỗi khi thêm ca làm!");
+							JOptionPane.showMessageDialog(this, "Error adding shift!");
 						}
 					});
 		}
@@ -256,16 +249,12 @@ public class AttendanceFormPanel extends JPanel {
 		}
 
 		var otTypes = new OTTypeService().getAll();
-
-		// 🔹 1. Loại bỏ những OT đã tồn tại (trùng ID)
 		if (existOt != null && !existOt.isEmpty()) {
 			var existOtIds = existOt.stream()
 					.map(OTJunction::getOtTypeId)
 					.toList();
 			otTypes.removeIf(ot -> existOtIds.contains(ot.getId()));
 		}
-
-		// 🔹 2. Loại bỏ những OT trùng giờ với ca chính
 		if (shiftInfo != null && shiftInfo.getStartTime() != null && shiftInfo.getEndTime() != null) {
 			var shiftStart = shiftInfo.getStartTime().toLocalTime();
 			var shiftEnd = shiftInfo.getEndTime().toLocalTime();
@@ -277,8 +266,6 @@ public class AttendanceFormPanel extends JPanel {
 				return overlap;
 			});
 		}
-
-		// 🔹 3. Loại bỏ những OT trùng giờ với các OT đã có
 		if (existOt != null && !existOt.isEmpty()) {
 			var otTypeService = new OTTypeService();
 			for (var existing : existOt) {
@@ -318,7 +305,7 @@ public class AttendanceFormPanel extends JPanel {
 						} else {
 							workScheduleId = workScheduleService.addAndReturnId(otWork);
 							if (workScheduleId == -1) {
-								JOptionPane.showMessageDialog(this, "Tạo WorkSchedule cho OT thất bại!");
+								JOptionPane.showMessageDialog(this, "Create WorkSchedule for OT failed!");
 								return;
 							}
 							otJunction.setWorkScheduleId(workScheduleId);
@@ -326,7 +313,7 @@ public class AttendanceFormPanel extends JPanel {
 
 						var success = new OTJunctionService().add(otJunction);
 						if (success) {
-							JOptionPane.showMessageDialog(this, "Thêm OT thành công!");
+							JOptionPane.showMessageDialog(this, "Add OT successfully!");
 							shiftListPanel.add(Box.createVerticalStrut(10), 1);
 							shiftListPanel.add(createOTPanel(otJunction), 1);
 							shiftListPanel.setAlignmentY(TOP_ALIGNMENT);
@@ -337,11 +324,11 @@ public class AttendanceFormPanel extends JPanel {
 								onDataChanged.run();
 							}
 						} else {
-							JOptionPane.showMessageDialog(this, "Thêm OT thất bại!");
+							JOptionPane.showMessageDialog(this, "Add OT failed!");
 						}
 					} catch (Exception ex) {
 						ex.printStackTrace();
-						JOptionPane.showMessageDialog(this, "Lỗi khi thêm OT!");
+						JOptionPane.showMessageDialog(this, "Error adding OT!");
 					}
 				});
 	}
@@ -360,14 +347,14 @@ public class AttendanceFormPanel extends JPanel {
 		headerPanel.setOpaque(false);
 		var fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		var formattedDate = LocalDate.parse(date).format(fmt);
-		var header = new JLabel("Lịch làm của " + employeeName + " ngày " + formattedDate);
+		var header = new JLabel("Work schedule of " + employeeName + " on " + formattedDate);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		headerPanel.add(header);
 		shiftListPanel.add(headerPanel);
 
 		if (dayStatusList == null || dayStatusList.isEmpty()) {
-			var empty = new JLabel("Không có ca làm trong ngày này.");
+			var empty = new JLabel("No shifts on this day.");
 			empty.setForeground(Color.GRAY);
 			empty.setFont(new Font("Segoe UI", Font.ITALIC, 13));
 			shiftListPanel.add(empty);
@@ -395,7 +382,7 @@ public class AttendanceFormPanel extends JPanel {
 			var empty = new JPanel();
 			empty.setBackground(Color.WHITE);
 			empty.setBorder(BorderFactory.createLineBorder(new Color(224, 235, 250), 1, true));
-			empty.add(new JLabel("Không tìm thấy loại OT"));
+			empty.add(new JLabel("OT type not found"));
 			return empty;
 		}
 
@@ -412,8 +399,6 @@ public class AttendanceFormPanel extends JPanel {
 		var ws = new WorkScheduleDAO().getById(ot.getWorkScheduleId());
 		var otDetailsPanel = new OtDetailsPanel(ws, otFullName,
 				new ShiftService().getById(ws.getShiftId()),ot, otType, this);
-
-		// Giữ kích thước đồng nhất với ca làm
 		var fixedSize = new Dimension(817, 150);
 		otDetailsPanel.setPreferredSize(fixedSize);
 		otDetailsPanel.setMinimumSize(fixedSize);
@@ -462,8 +447,6 @@ public class AttendanceFormPanel extends JPanel {
 		};
 
 		var shiftPanel = new ShiftDetailsPanel(ws, shiftFullName, shift, this);
-
-		// 👉 Giữ kích thước cố định cho mỗi ca làm
 		var fixedSize = new Dimension(817, 150);
 		shiftPanel.setPreferredSize(fixedSize);
 		shiftPanel.setMinimumSize(fixedSize);
@@ -517,12 +500,12 @@ public class AttendanceFormPanel extends JPanel {
 	// --- Generic helper
 	private <T> void showAddDialog(String title, List<T> items, Function<T, String> displayFunc, Consumer<T> saveAction) {
 		if (currentEmployeeId == 0 || currentDate == null) {
-			JOptionPane.showMessageDialog(this, "Chưa chọn nhân viên hoặc ngày!");
+			JOptionPane.showMessageDialog(this, "Employee or date not selected!");
 			return;
 		}
 
 		if (items == null || items.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Hiện không có ca làm phù hợp, xin kiểm tra lại ca Ot!");
+			JOptionPane.showMessageDialog(this, "No suitable shifts available, please check OT shifts!");
 			return;
 		}
 
@@ -538,8 +521,6 @@ public class AttendanceFormPanel extends JPanel {
 			} else {
 				label.setBackground(Color.WHITE);
 			}
-
-			// ⚠️ Chỉ kiểm tra khi index >= 0 để tránh lỗi IndexOutOfBounds
 			if (index >= 0 && items.get(index) instanceof com.example.swingapp.model.OTType otType && otType.isDisabled()) {
 				label.setForeground(Color.GRAY);
 				label.setEnabled(false);
@@ -555,17 +536,17 @@ public class AttendanceFormPanel extends JPanel {
 
 
 		var panel = new JPanel();
-		panel.add(new JLabel("Chọn " + title + ":"));
+		panel.add(new JLabel("Select " + title + ":"));
 		panel.add(combo);
 
-		var result = JOptionPane.showConfirmDialog(this, panel, "Thêm " + title,
+		var result = JOptionPane.showConfirmDialog(this, panel, "Add " + title,
 				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
 		if (result == JOptionPane.OK_OPTION) {
 			var selectedIndex = combo.getSelectedIndex();
 			var selectedItem = items.get(selectedIndex);
 			if (selectedItem instanceof com.example.swingapp.model.OTType otType && otType.isDisabled()) {
-				JOptionPane.showMessageDialog(this, "Không thể chọn OT trùng với ca làm!");
+				JOptionPane.showMessageDialog(this, "Cannot select OT overlapping with shift!");
 				return;
 			}
 			saveAction.accept(selectedItem);

@@ -80,7 +80,8 @@ public class AccountDAO implements BaseDAO<Account> {
 						rs.getString("salt"),
 						rs.getBoolean("active"),
 						rs.getInt("employee_id"),
-						rs.getString("auth")
+						rs.getString("auth"),
+						rs.getString("reset_code")
 						));
 			}
 		} catch (SQLException e) {
@@ -111,4 +112,85 @@ public class AccountDAO implements BaseDAO<Account> {
 		}
 		return null;
 	}
+	public Account checkAccountInfo(String accountName, String auth, String email) {
+		var sql ="""
+					select ac.account_id
+					from tbl_Account ac
+					join tbl_Employee e on e.id = ac.employee_id
+					where ac.account_name = ? and ac.auth = ? and e.email = ?
+				""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
+			ps.setString(1, accountName);
+			ps.setString(2,auth);
+			ps.setString(3,email);
+			var rs = ps.executeQuery();
+			if (rs.next()) {
+				var account = new Account();
+				account.setAccountId(rs.getInt("account_id"));
+				return account;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	public boolean insertCode(String code, int accountId) {
+		var sql = """
+					Update tbl_Account
+					set reset_code = ?
+					where account_id = ?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)){
+			ps.setString(1,code);
+			ps.setInt(2, accountId);
+			var rs = ps.executeUpdate();
+			return rs > 0;
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	public String getTotken(int accountId) {
+		var token = "";
+		var sql = """
+					select a.reset_code
+					from tbl_Account a
+					where a.account_id = ?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)){
+			ps.setInt(1, accountId);
+			var rs = ps.executeQuery();
+			while(rs.next()) {
+				token = rs.getString("reset_code");
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		return token;
+	}
+	public boolean updateNewPassword(int accountId, String newHashedPassword, String newSalt) {
+		var sql = """
+					update tbl_Account
+					set salt = ?, password = ?
+					where account_id =?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql);){
+			ps.setString(1, newSalt);
+			ps.setString(2,newHashedPassword);
+			ps.setInt(3,accountId);
+			var rs = ps.executeUpdate();
+			return rs >0;
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+
 }

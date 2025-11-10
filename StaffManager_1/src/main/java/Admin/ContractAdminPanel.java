@@ -76,11 +76,11 @@ public class ContractAdminPanel extends JPanel {
 		searchPanel.setPreferredSize(new Dimension(0, 70));
 		add(searchPanel, BorderLayout.NORTH);
 
-		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 400);
+		txtSearch = styledField("Search by employee name...", 400);
 		txtSearch.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent e) {
-				if (txtSearch.getText().equals("Tìm kiếm theo tên nhân viên...")) {
+				if (txtSearch.getText().equals("Search by employee name...")) {
 					txtSearch.setText("");
 					txtSearch.setForeground(TEXT_PRIMARY);
 				}
@@ -88,7 +88,7 @@ public class ContractAdminPanel extends JPanel {
 			@Override
 			public void focusLost(FocusEvent e) {
 				if (txtSearch.getText().isEmpty()) {
-					txtSearch.setText("Tìm kiếm theo tên nhân viên...");
+					txtSearch.setText("Search by employee name...");
 					txtSearch.setForeground(Color.GRAY);
 				}
 			}
@@ -106,14 +106,14 @@ public class ContractAdminPanel extends JPanel {
 
 		renderRestaurant();
 
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
+		var btnSearch = createButton("Search", PRIMARY_BLUE, 110);
 		btnSearch.addActionListener(e -> search());
 		searchPanel.add(txtSearch);
-		searchPanel.add(new JLabel("Nhà hàng: "));
+		searchPanel.add(new JLabel("Restaurant: "));
 		searchPanel.add(resFilter);
 		searchPanel.add(btnSearch);
 
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
+		btnAdd = createButton("+ Add new", ACCENT_BLUE, 110);
 		btnAdd.addActionListener(e -> addNew());
 		searchPanel.add(btnAdd);
 
@@ -133,7 +133,7 @@ public class ContractAdminPanel extends JPanel {
 		var topPanel = new JPanel(new BorderLayout());
 		topPanel.setOpaque(false);
 
-		var header = new JLabel("DANH SÁCH HỢP ĐỒNG LAO ĐỘNG");
+		var header = new JLabel("EMPLOYMENT CONTRACT LIST");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
@@ -182,7 +182,7 @@ public class ContractAdminPanel extends JPanel {
 		actions.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		add(actions, BorderLayout.SOUTH);
 
-		var btnDelete = createButton("Xóa", DANGER_RED, 110);
+		var btnDelete = createButton("Delete", DANGER_RED, 110);
 		btnDelete.addActionListener(e -> deleteRow());
 		actions.add(btnDelete);
 
@@ -197,7 +197,7 @@ public class ContractAdminPanel extends JPanel {
 		card.setBackground(CARD_WHITE);
 		card.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-		var header = new JLabel("DANH SÁCH HỢP ĐỒNG LAO ĐỘNG");
+		var header = new JLabel("EMPLOYMENT CONTRACT LIST");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
@@ -393,20 +393,20 @@ public class ContractAdminPanel extends JPanel {
 		if (r != -1) {
 			JOptionPane.showMessageDialog(
 					this,
-					"Hợp đồng không thể xóa!",
-					"Cảnh Báo",
+					"Contract cannot be deleted!",
+					"Warning",
 					JOptionPane.WARNING_MESSAGE
 					);
 			return;
 		} else {
-			JOptionPane.showMessageDialog(this, "Chọn dòng cần xóa!", "Cảnh Báo", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Select a row to delete!", "Warning", JOptionPane.WARNING_MESSAGE);
 		}
 	}
 
 	private void printPDF() {
 		try {
-			var h = new MessageFormat("DANH SÁCH HỢP ĐỒNG LAO ĐỘNG");
-			var f = new MessageFormat("Trang {0}");
+			var h = new MessageFormat("EMPLOYMENT CONTRACT LIST");
+			var f = new MessageFormat("Page {0}");
 			table.print(JTable.PrintMode.FIT_WIDTH, h, f);
 			JOptionPane.showMessageDialog(this, "Xuất PDF thành công!", "Thành Công",
 					JOptionPane.INFORMATION_MESSAGE);
@@ -423,7 +423,7 @@ public class ContractAdminPanel extends JPanel {
 		if (selectedRestaurant != null) {
 			restaurantId = selectedRestaurant.getId();
 		}
-		if (keyword.isEmpty() || "Tìm kiếm theo tên nhân viên...".equals(keyword)) {
+		if (keyword.isEmpty() || "Search by employee name...".equals(keyword)) {
 			keyword = "";
 		}
 
@@ -454,7 +454,7 @@ public class ContractAdminPanel extends JPanel {
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu hợp đồng: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Error loading contract data: " + ex.getMessage());
 		}
 	}
 
@@ -472,8 +472,8 @@ public class ContractAdminPanel extends JPanel {
 				var hasActive = contractService.hasActiveContract((int) data[1]);
 				if (hasActive) {
 					JOptionPane.showMessageDialog(this,
-							"Nhân viên này hiện đã có hợp đồng còn hiệu lực!",
-							"Cảnh báo",
+							"This employee already has an active contract!",
+							"Warning",
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
@@ -488,7 +488,7 @@ public class ContractAdminPanel extends JPanel {
 				c.setStatus((String) data[6]);
 				var checkAdd = contractService.add(c);
 				if(checkAdd) {
-					JOptionPane.showMessageDialog(this, "Add new Contract successful!", "Thành Công", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(this, "Add new Contract successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
 				}
 			}catch (Exception ex) {
 				ex.printStackTrace();
@@ -503,8 +503,8 @@ public class ContractAdminPanel extends JPanel {
 				}
 				JOptionPane.showMessageDialog(
 						this,
-						"Hợp đồng không thể chỉnh sửa!",
-						"Cảnh Báo",
+						"Contract cannot be edited!",
+						"Warning",
 						JOptionPane.WARNING_MESSAGE
 						);
 			}
@@ -525,7 +525,7 @@ public class ContractAdminPanel extends JPanel {
 			var restaurantService = new RestaurantService();
 			var restaurants = restaurantService.getAll();
 			resFilter.removeAllItems();
-			resFilter.addItem(new Restaurant(0, "Tất Cả Nhà Hàng", 0));
+			resFilter.addItem(new Restaurant(0, "All restaurant", 0));
 			for (Restaurant r : restaurants) {
 				resFilter.addItem(r);
 			}
@@ -534,8 +534,8 @@ public class ContractAdminPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Error loading restaurant list: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -555,7 +555,7 @@ public class ContractAdminPanel extends JPanel {
 		var viewTotalEmployees = String.valueOf(totalEmployees);
 		var viewTotalNotContract = String.valueOf(totalNotContract);
 		String[][] legends = {
-				{"Tổng nhân viên: ", viewTotalEmployees }
+				{"Total Employees: ", viewTotalEmployees }
 
 		};
 
@@ -580,7 +580,7 @@ public class ContractAdminPanel extends JPanel {
 		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		totalNotContract.setForeground(PRIMARY_BLUE);
 		totalNotContract.setPreferredSize(new Dimension(170, 20));
-		totalNotContract.setText("Chưa có hợp đồng / Hết hạn: ");
+		totalNotContract.setText("No contract / Expired: ");
 
 		var desc = new JLabel();
 		desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
@@ -591,7 +591,7 @@ public class ContractAdminPanel extends JPanel {
 		item.add(totalNotContract, BorderLayout.WEST);
 		item.add(desc, BorderLayout.CENTER);
 		legend.add(item);
-		var summaryLegend = new JLabel("Tổng hợp: ");
+		var summaryLegend = new JLabel("Note: ");
 		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		summaryLegend.setForeground(PRIMARY_BLUE);
 		legend.add(summaryLegend);

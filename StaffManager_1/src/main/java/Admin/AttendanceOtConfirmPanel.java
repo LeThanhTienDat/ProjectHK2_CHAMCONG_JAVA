@@ -65,39 +65,27 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		onDataChanged = r;
 	}
 
-	// Khởi tạo chính (Gọi các phương thức tạo Panel)
 	public AttendanceOtConfirmPanel(ActionListener onSave, ActionListener onCancel) {
 		setBackground(BG_LIGHT);
-		// Sử dụng padding lớn hơn giống như OverviewAdminPanel
 		setLayout(new BorderLayout(0, 15));
-		setBorder(new EmptyBorder(10, 25, 10, 25)); // Padding ngoài
-
-		// 1. TOP: Header và Search/Filter cố định
+		setBorder(new EmptyBorder(10, 25, 10, 25));
 		var topPanel = new JPanel(new BorderLayout());
 		topPanel.setOpaque(false);
 
 		var headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
 		headerPanel.setOpaque(false);
-		headerLabel = new JLabel("DUYỆT CHẤM CÔNG OT", SwingConstants.CENTER); // Khởi tạo headerLabel
+		headerLabel = new JLabel("OT Attendance Approval", SwingConstants.CENTER);
 		headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		headerLabel.setForeground(PRIMARY_BLUE);
 		headerLabel.setBorder(new EmptyBorder(0, 0, 10, 0));
 		headerPanel.add(headerLabel);
 		topPanel.add(headerPanel, BorderLayout.NORTH);
-
-		// Thêm Panel Search (Cố định)
 		topPanel.add(createSearchFilterPanel(), BorderLayout.CENTER);
 		add(topPanel, BorderLayout.NORTH);
-
-		// 2. CENTER: Table (Dữ liệu cuộn)
 		add(createTableCard(onCancel), BorderLayout.CENTER);
-
-		// Gọi load dữ liệu ban đầu
-		// loadRestaurantFilter(); // Bạn cần triển khai phương thức này
 		loadOtConfirmListPanel();
 	}
 
-	// Tương tự createSearchPanel trong OverviewAdminPanel
 	public JPanel createSearchFilterPanel() {
 		var p = new JPanel();
 		p.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
@@ -105,8 +93,6 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		p.setBackground(CARD_WHITE);
 		p.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
 		p.setPreferredSize(new Dimension(0, 70));
-
-		// Khởi tạo cmbMonthYear và txtSearch/resFilter
 		cmbMonthYear = new JComboBox<>();
 		cmbMonthYear.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		cmbMonthYear.setBackground(new Color(248, 250, 252));
@@ -117,19 +103,19 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		var now = LocalDate.now();
 		for (var i = 1; i >= 0; i--) {
 			var month = now.minusMonths(i);
-			var item = String.format("Tháng %d / %d", month.getMonthValue(), month.getYear());
+			var item = String.format("%d / %d", month.getMonthValue(), month.getYear());
 			cmbMonthYear.addItem(item);
 		}
 		cmbMonthYear.setSelectedIndex(1);
 		cmbMonthYear.addActionListener(e -> loadOtConfirmListPanel());
 
 		// Sử dụng styledField (giả định bạn có hàm này, nếu không thì dùng JTextField)
-		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 300);
+		txtSearch = styledField("Search by employee name...", 300);
 		txtSearch.setColumns(30);
 		txtSearch.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent e) {
-				if (txtSearch.getText().equals("Tìm kiếm theo tên nhân viên...")) {
+				if (txtSearch.getText().equals("Search by employee name...")) {
 					txtSearch.setText("");
 					txtSearch.setForeground(TEXT_PRIMARY);
 				}
@@ -137,13 +123,13 @@ public class AttendanceOtConfirmPanel extends JPanel {
 			@Override
 			public void focusLost(FocusEvent e) {
 				if (txtSearch.getText().isEmpty()) {
-					txtSearch.setText("Tìm kiếm theo tên nhân viên...");
+					txtSearch.setText("Search by employee name...");
 					txtSearch.setForeground(Color.GRAY);
 				}
 			}
 		});
 
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 120);
+		var btnSearch = createButton("Search", PRIMARY_BLUE, 120);
 		btnSearch.addActionListener(e -> loadOtConfirmListPanel());
 
 		resFilter = new JComboBox<Restaurant>();
@@ -153,21 +139,19 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		resFilter.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
 				new EmptyBorder(8, 12, 8, 12)));
-		renderRestaurant(); // Gọi hàm load nhà hàng
+		renderRestaurant();
 		resFilter.addActionListener(e -> loadOtConfirmListPanel());
 
 
 		p.add(txtSearch);
-		p.add(new JLabel("Tháng/Năm: "));
+		p.add(new JLabel("Month/Year: "));
 		p.add(cmbMonthYear);
-		p.add(new JLabel("Nhà hàng: "));
+		p.add(new JLabel("Restaurant: "));
 		p.add(resFilter);
 		p.add(Box.createHorizontalStrut(10));
 		p.add(btnSearch);
 		return p;
 	}
-
-	// Tương tự createTableCard trong OverviewAdminPanel
 	public JPanel createTableCard(ActionListener onCancel) {
 		var card = new JPanel(new BorderLayout());
 		card.setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -175,9 +159,7 @@ public class AttendanceOtConfirmPanel extends JPanel {
 
 		var topPanel = new JPanel(new BorderLayout());
 		topPanel.setOpaque(false);
-
-		// Label header trong card
-		var tableHeaderLabel = new JLabel("DANH SÁCH OT CẦN DUYỆT", SwingConstants.LEFT);
+		var tableHeaderLabel = new JLabel("OT List Pending Approval", SwingConstants.LEFT);
 		tableHeaderLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
 		tableHeaderLabel.setForeground(TEXT_PRIMARY);
 		tableHeaderLabel.setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -188,25 +170,21 @@ public class AttendanceOtConfirmPanel extends JPanel {
 
 		// Khởi tạo Model và Table
 		int[] columnWidths = { 50, 110, 70, 80, 80, 180, 150, 150, 80, 250, 50 };
-		String[] columns = { "Mã NV", "Họ Tên", "Nhà hàng","Điện thoại", "Ngày OT", "Ca OT", "Giờ vào", "Giờ ra", "Trạng thái", "Thao tác", "ot_type_id"};
+		String[] columns = { "Employee Id", "Name", "Restaurant","Phone", "Date", "OT Name", "In Time", "Out Time", "Status", "Action", "ot_type_id"};
 		modelOtConfirm = new DefaultTableModel(columns, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
-				// Cho phép chỉnh sửa cột Thao tác (index 8) nếu dùng Editor/Renderer
 				return column == 9;
 			}
 		};
 		tableOtConfirm = new JTable(modelOtConfirm);
 		tableOtConfirm.getTableHeader().setReorderingAllowed(false);
 		styleTable(tableOtConfirm);
-
-		// Renderer cho nút Thao tác (Chỉ là ví dụ, cần Editor/Renderer thực tế)
 		tableOtConfirm.getColumnModel().getColumn(9).setCellRenderer(new ButtonRenderer());
 		tableOtConfirm.getColumnModel().getColumn(9).setCellEditor(new ButtonEditor(tableOtConfirm));
 		tableOtConfirm.getColumnModel().getColumn(10).setMinWidth(0);
 		tableOtConfirm.getColumnModel().getColumn(10).setMaxWidth(0);
 		tableOtConfirm.getColumnModel().getColumn(10).setPreferredWidth(0);
-		// Cài đặt chiều rộng cột (Tùy chọn)
 		tableOtConfirm.getColumnModel().getColumn(9).setPreferredWidth(150);
 
 		for (var i = 0; i < tableOtConfirm.getColumnCount(); i++) {
@@ -214,7 +192,6 @@ public class AttendanceOtConfirmPanel extends JPanel {
 				tableOtConfirm.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
 			}
 		}
-		//		tableOtConfirm.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
 		var sp = new JScrollPane(tableOtConfirm);
 		sp.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
@@ -222,10 +199,8 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		sp.getVerticalScrollBar().setUnitIncrement(16);
-
 		card.add(sp, BorderLayout.CENTER);
 
-		// Thêm Action Panel ở dưới (Đóng/Refresh)
 		var actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
 		actionPanel.setBackground(Color.WHITE);
 
@@ -248,7 +223,7 @@ public class AttendanceOtConfirmPanel extends JPanel {
 			var restaurantService = new RestaurantService();
 			var restaurants = restaurantService.getAll();
 			resFilter.removeAllItems();
-			resFilter.addItem(new Restaurant(0, "Tất Cả Nhà Hàng", 0));
+			resFilter.addItem(new Restaurant(0, "All restaurant", 0));
 			for (Restaurant r : restaurants) {
 				resFilter.addItem(r);
 			}
@@ -257,12 +232,10 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Loading restaurant error: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
-
-	// Phương thức giả định cho styledField
 	private JTextField styledField(String placeholder, int width) {
 		var txt = new JTextField(placeholder);
 		txt.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -279,7 +252,7 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		var monthStr = (String) cmbMonthYear.getSelectedItem();
 		int month = 0, year = 0;
 		if (monthStr != null && monthStr.contains("/")) {
-			var parts = monthStr.replace("Tháng", "").split("/");
+			var parts = monthStr.replace("Month", "").split("/");
 			month = Integer.parseInt(parts[0].trim());
 			year = Integer.parseInt(parts[1].trim());
 		}
@@ -290,7 +263,7 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		if (selectedRestaurant != null) {
 			restaurantId = selectedRestaurant.getId();
 		}
-		if (keyword.isEmpty() || "Tìm kiếm theo tên nhân viên...".equals(keyword)) {
+		if (keyword.isEmpty() || "Search by employee name...".equals(keyword)) {
 			keyword = "";
 		}
 		var otConfirmList = otJunctionService.getOtConfirmList(keyword,restaurantId,month, year);
@@ -303,11 +276,9 @@ public class AttendanceOtConfirmPanel extends JPanel {
 			var dateObject = item[6];
 			var formattedDate = "N/A";
 			if (dateObject instanceof java.sql.Date sqlDate) {
-				// Trường hợp: Dữ liệu là java.sql.Date (Xác nhận của bạn)
 				formattedDate = sqlDate.toLocalDate().format(formatter);
 
 			} else if (dateObject instanceof java.time.LocalDate localDate) {
-				// Trường hợp dự phòng: Nếu service trả về LocalDate
 				formattedDate = localDate.format(formatter);
 
 			}
@@ -318,10 +289,10 @@ public class AttendanceOtConfirmPanel extends JPanel {
 			row[3] = item[4];
 			row[4] = formattedDate;
 			row[5] = item[12]+": "+item[13]+" - "+item[14];
-			row[6] = item[8]!=null ? item[8] : "Chưa chấm công";
-			row[7] = item[9]!=null ? item[9] : "Chưa chấm công";
+			row[6] = item[8]!=null ? item[8] : "Not recorded";
+			row[7] = item[9]!=null ? item[9] : "Not recorded";
 			row[8] = item[10];
-			row[9] = "Duyệt/Từ chối";
+			row[9] = "Approve/Reject";
 			row[10] = item[7];
 			modelOtConfirm.addRow(row);
 		}
@@ -332,8 +303,6 @@ public class AttendanceOtConfirmPanel extends JPanel {
 			onDataChanged.run();
 		}
 	}
-
-	// --- Các phương thức hỗ trợ Styling (Lấy từ OverviewAdminPanel) ---
 
 	public static JButton createButton(String text, Color bg, int w) {
 		JButton b = new JButton(text) {
@@ -383,7 +352,6 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		header.setPreferredSize(new Dimension(0, 45));
 		header.setReorderingAllowed(false);
 
-		// Renderer TIÊU ĐỀ CỘT TÙY CHỈNH
 		var headerRenderer = new DefaultTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(
@@ -404,8 +372,6 @@ public class AttendanceOtConfirmPanel extends JPanel {
 			}
 		};
 		table.getTableHeader().setDefaultRenderer(headerRenderer);
-
-		// Áp dụng renderer trung tâm và màu sắc cho các ô
 		var centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -415,8 +381,8 @@ public class AttendanceOtConfirmPanel extends JPanel {
 	}
 	private class ButtonRenderer extends DefaultTableCellRenderer {
 		private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
-		private final JButton btnApprove = createButton("Duyệt", SUCCESS_GREEN, 110);
-		private final JButton btnReject = createButton("Từ chối", DANGER_RED, 110);
+		private final JButton btnApprove = createButton("Approve", SUCCESS_GREEN, 110);
+		private final JButton btnReject = createButton("Reject", DANGER_RED, 110);
 
 		public ButtonRenderer() {
 			panel.setOpaque(true);
@@ -437,11 +403,10 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		}
 	}
 
-	// Lớp Editor giả định cho cột nút (để xử lý click)
 	private class ButtonEditor extends javax.swing.AbstractCellEditor implements javax.swing.table.TableCellEditor {
 		private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
-		private final JButton btnApprove = createButton("Duyệt", SUCCESS_GREEN, 110);
-		private final JButton btnReject = createButton("Từ chối", DANGER_RED, 110);
+		private final JButton btnApprove = createButton("Approve", SUCCESS_GREEN, 110);
+		private final JButton btnReject = createButton("Reject", DANGER_RED, 110);
 
 		public ButtonEditor(JTable table) {
 			panel.setOpaque(true);
@@ -451,17 +416,17 @@ public class AttendanceOtConfirmPanel extends JPanel {
 				var modelRow = table.convertRowIndexToModel(table.getEditingRow());
 				var otJunctionId = (int) modelOtConfirm.getValueAt(modelRow, 10);
 				var confirmDialog = JOptionPane.showConfirmDialog(table,
-						"Bạn có chắc chắn muốn duyệt OT này ?",
-						"Xác nhận Duyệt OT",
+						"Are you sure you want to approve this OT?",
+						"Confirm OT Approval",
 						JOptionPane.YES_NO_OPTION,
 						JOptionPane.QUESTION_MESSAGE
 						);
 				if (confirmDialog == JOptionPane.YES_OPTION) {
 					var success = otJunctionService.confirmOt(otJunctionId);
 					if (success) {
-						JOptionPane.showMessageDialog(table, "Duyệt OT thành công!");
+						JOptionPane.showMessageDialog(table, "OT approved successfully!");
 					} else {
-						JOptionPane.showMessageDialog(table, "Duyệt OT thất bại, vui lòng kiểm tra lại!");
+						JOptionPane.showMessageDialog(table, "OT approval failed, please check again!");
 					}
 				}
 				fireEditingStopped();
@@ -472,21 +437,21 @@ public class AttendanceOtConfirmPanel extends JPanel {
 				var modelRow = table.convertRowIndexToModel(table.getEditingRow());
 				var otJunctionId = (int) modelOtConfirm.getValueAt(modelRow, 10);
 				var confirmDialog = JOptionPane.showConfirmDialog(table,
-						"Bạn có chắc chắn muốn từ chối OT này ?",
-						"Xác nhận từ chối duyệt OT",
+						"Are you sure you want to reject this OT?",
+						"Confirm OT Rejection",
 						JOptionPane.YES_NO_OPTION,
 						JOptionPane.QUESTION_MESSAGE
 						);
 				if (confirmDialog == JOptionPane.YES_OPTION) {
 					var success = otJunctionService.rejectOt(otJunctionId);
 					if (success) {
-						JOptionPane.showMessageDialog(table, "Từ chối OT thành công!");
+						JOptionPane.showMessageDialog(table, "OT rejected successfully!");
 					} else {
-						JOptionPane.showMessageDialog(table, "Từ chối OT thất bại, vui lòng kiểm tra lại!");
+						JOptionPane.showMessageDialog(table, "OT rejection failed, please check again!");
 					}
 				}
 				fireEditingStopped();
-				loadOtConfirmListPanel(); // Refresh data
+				loadOtConfirmListPanel();
 			});
 
 			panel.add(btnApprove);

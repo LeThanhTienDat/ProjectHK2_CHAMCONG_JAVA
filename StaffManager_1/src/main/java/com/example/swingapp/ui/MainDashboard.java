@@ -25,10 +25,10 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import com.example.swingapp.ui.module.AccountManagementPanel;
-import com.example.swingapp.ui.module.ContractManagementPanel;
+//import com.example.swingapp.ui.module.ContractManagementPanel;
 import com.example.swingapp.ui.module.EmployeeManagementPanel;
-import com.example.swingapp.ui.module.MonthlySummaryPanel;
-import com.example.swingapp.ui.module.OvertimeAbsentPanel;
+//import com.example.swingapp.ui.module.MonthlySummaryPanel;
+//import com.example.swingapp.ui.module.OvertimeAbsentPanel;
 import com.example.swingapp.ui.module.RestaurantManagementPanel;
 import com.example.swingapp.ui.module.ShiftManagementPanel;
 import com.example.swingapp.ui.module.StreetManagementPanel;
@@ -95,10 +95,10 @@ public class MainDashboard extends JPanel {
 			switch (entry.getKey()) {
 			case "Nhân viên" -> btn.addActionListener(e -> switchPanel(btn, new EmployeeManagementPanel()));
 			case "Tài khoản" -> btn.addActionListener(e -> switchPanel(btn, new AccountManagementPanel()));
-			case "Hợp đồng" -> btn.addActionListener(e -> switchPanel(btn, new ContractManagementPanel()));
-			case "Lương tháng" -> btn.addActionListener(e -> switchPanel(btn, new MonthlySummaryPanel()));
+			//			case "Hợp đồng" -> btn.addActionListener(e -> switchPanel(btn, new ContractManagementPanel()));
+			//			case "Lương tháng" -> btn.addActionListener(e -> switchPanel(btn, new MonthlySummaryPanel()));
 			case "Ca làm" -> btn.addActionListener(e -> switchPanel(btn, new ShiftManagementPanel()));
-			case "OT & Nghỉ phép" -> btn.addActionListener(e -> switchPanel(btn, new OvertimeAbsentPanel()));
+			//			case "OT & Nghỉ phép" -> btn.addActionListener(e -> switchPanel(btn, new OvertimeAbsentPanel()));
 			case "Nhà hàng" -> btn.addActionListener(e -> switchPanel(btn, new RestaurantManagementPanel()));
 			case "Đường phố" -> btn.addActionListener(e -> switchPanel(btn, new StreetManagementPanel()));
 			case "Đăng xuất" -> btnLogout = btn;

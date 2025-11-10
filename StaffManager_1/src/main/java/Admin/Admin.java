@@ -126,7 +126,7 @@ public class Admin extends JFrame {
 
 		var infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
 		infoPanel.setOpaque(false);
-		infoPanel.add(createClickableInfoBadge("Quản Trị Viên", new Color(255, 255, 255, 25)));
+		infoPanel.add(createClickableInfoBadge("Administrator", new Color(255, 255, 255, 25)));
 
 		header.add(titleSection, BorderLayout.WEST);
 		header.add(infoPanel, BorderLayout.EAST);
@@ -151,7 +151,7 @@ public class Admin extends JFrame {
 						selectedButton.setSelected(false);
 					}
 				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(Admin.this, "Lỗi tải profile: " + ex.getMessage(), "Lỗi",
+					JOptionPane.showMessageDialog(Admin.this, "Error loading profile: " + ex.getMessage(), "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
 			}
@@ -191,7 +191,7 @@ public class Admin extends JFrame {
 				"Contracts", "Overtime", "Payroll Summary", "Reports & Statistics", "Profiles", "System Settings" };
 
 		var sidebarButtons = new SidebarButton[PANELS.length];
-		var row = 2; // bắt đầu từ hàng thứ 2
+		var row = 2;
 
 		for (var i = 0; i < PANELS.length; i++) {
 			final var index = i;
@@ -213,7 +213,7 @@ public class Admin extends JFrame {
 						switchView(panel, PANEL_TITLES[index]);
 						updateSelectedButton(btn);
 					} catch (Exception ex) {
-						JOptionPane.showMessageDialog(Admin.this, "Lỗi tải panel: " + ex.getMessage(), "Lỗi",
+						JOptionPane.showMessageDialog(Admin.this, "Error loading panel: " + ex.getMessage(), "Error",
 								JOptionPane.ERROR_MESSAGE);
 					}
 				}
@@ -331,12 +331,12 @@ public class Admin extends JFrame {
 		menuBar.setPreferredSize(new Dimension(0, 45));
 
 		var fileMenu = createStyledMenu("File");
-		var exitItem = createStyledMenuItem("Thoát", Color.RED);
+		var exitItem = createStyledMenuItem("Exit", Color.RED);
 		exitItem.addActionListener(e -> System.exit(0));
 		fileMenu.add(exitItem);
 
-		var toolsMenu = createStyledMenu("Công Cụ");
-		var refreshItem = createStyledMenuItem("Làm Mới Dữ Liệu", new Color(76, 175, 80));
+		var toolsMenu = createStyledMenu("Tools");
+		var refreshItem = createStyledMenuItem("Refresh Data", new Color(76, 175, 80));
 		refreshItem.addActionListener(e -> {
 			if (currentView != null) {
 				currentView.revalidate();
