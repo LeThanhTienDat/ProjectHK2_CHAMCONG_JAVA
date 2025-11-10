@@ -29,7 +29,6 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.EmptyBorder;
 
@@ -285,11 +284,6 @@ public class LoginForm extends JFrame {
 		}
 
 		dispose();
-	}
-
-
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(() -> new LoginForm().setVisible(true));
 	}
 	public static JButton createButton(String text, Color bg, int w) {
 		JButton b = new JButton(text) {
