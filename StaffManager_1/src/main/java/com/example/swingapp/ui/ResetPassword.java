@@ -69,7 +69,7 @@ public class ResetPassword extends JFrame {
 
 	private void initUI() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Tìm mật khẩu - Hệ thống chấm công");
+		setTitle("Reset Password - Attendance System");
 		setResizable(false);
 		setMinimumSize(new Dimension(450, 580));
 
@@ -84,12 +84,12 @@ public class ResetPassword extends JFrame {
 		card.setBorder(new RoundedShadowBorder(25, 12));
 		card.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		var title = new JLabel("TÌM MẬT KHẨU", SwingConstants.CENTER);
+		var title = new JLabel("RESET PASSWORD", SwingConstants.CENTER);
 		title.setFont(new Font("Segoe UI", Font.BOLD, 24));
 		title.setForeground(new Color(33, 33, 33));
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		var subtitle = new JLabel("Nhập email của bạn", SwingConstants.CENTER);
+		var subtitle = new JLabel("Enter your email", SwingConstants.CENTER);
 		subtitle.setFont(new Font("Segoe UI", Font.ITALIC, 14));
 		subtitle.setForeground(TEXT_LIGHT);
 		subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -122,11 +122,11 @@ public class ResetPassword extends JFrame {
 		var bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
 		bottomPanel.setBackground(Color.WHITE);
 		bottomPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-		var lblHave = new JLabel("Đã có tài khoản? ");
+		var lblHave = new JLabel("Already have an account? ");
 		lblHave.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 		lblHave.setForeground(TEXT_LIGHT);
 
-		cmdToLogin = new JLabel("Đăng nhập ngay");
+		cmdToLogin = new JLabel("Login now");
 		cmdToLogin.setFont(new Font("Segoe UI", Font.BOLD, 14));
 		cmdToLogin.setForeground(PRIMARY);
 		cmdToLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -316,7 +316,7 @@ public class ResetPassword extends JFrame {
 
 	private boolean validateForm() {
 		if (txtAccountName.getText().trim().isEmpty() || txtEmail.getText().trim().isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ các trường!", "Cảnh báo", JOptionPane.WARNING_MESSAGE); return false;
+			JOptionPane.showMessageDialog(this, "Please fill in all required fields!", "Warning", JOptionPane.WARNING_MESSAGE); return false;
 		}
 		return true;
 	}

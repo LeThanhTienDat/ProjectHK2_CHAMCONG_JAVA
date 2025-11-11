@@ -63,13 +63,13 @@ public class OvertimeFormPanel extends JPanel {
 		txtName = createField();
 		txtStart = createField();
 		txtEnd = createField();
-		chkConfirm = new JCheckBox("Đã xác nhận");
+		chkConfirm = new JCheckBox("Confirmed");
 		chkConfirm.setBackground(Color.WHITE);
 		chkConfirm.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-		addField(card, 0, "Tên Loại OT", txtName);
-		addField(card, 1, "Giờ Bắt Đầu (HH:mm)", txtStart);
-		addField(card, 2, "Giờ Kết Thúc (HH:mm)", txtEnd);
+		addField(card, 0, "OT Type Name", txtName);
+		addField(card, 1, "Start time (HH:mm)", txtStart);
+		addField(card, 2, "End time (HH:mm)", txtEnd);
 
 		var gcConfirm = new GridBagConstraints();
 		gcConfirm.insets = new Insets(8, 8, 8, 8);
@@ -82,8 +82,8 @@ public class OvertimeFormPanel extends JPanel {
 		var actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actions.setBackground(Color.WHITE);
 
-		btnCancel = createButton("Hủy", DANGER_RED);
-		btnSave = createButton("Lưu", PRIMARY_BLUE);
+		btnCancel = createButton("Cancel", DANGER_RED);
+		btnSave = createButton("Save", PRIMARY_BLUE);
 
 		actions.add(btnCancel);
 		actions.add(btnSave);
@@ -93,7 +93,7 @@ public class OvertimeFormPanel extends JPanel {
 
 		btnSave.addActionListener(e -> {
 			if (onSaveListener != null) {
-				ActionEvent evt = new ActionEvent(btnSave, e.getID(), addMode ? "add" : "update");
+				var evt = new ActionEvent(btnSave, e.getID(), addMode ? "add" : "update");
 				onSaveListener.actionPerformed(evt);
 			}
 		});
@@ -136,7 +136,7 @@ public class OvertimeFormPanel extends JPanel {
 				txtName.getText().trim(),
 				txtStart.getText().trim(),
 				txtEnd.getText().trim(),
-				chkConfirm.isSelected() ? "Có" : "Không"
+				chkConfirm.isSelected() ? "Yes" : "No"
 		};
 	}
 

@@ -59,7 +59,7 @@ public class ShiftAdminPanel extends JPanel {
 		searchPanel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
 		searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
 
-		txtSearch = new JTextField("Tìm kiếm ca làm...");
+		txtSearch = new JTextField("Search shifts...");
 		txtSearch.setPreferredSize(new Dimension(400, 36));
 		txtSearch.setColumns(30);
 
@@ -71,11 +71,11 @@ public class ShiftAdminPanel extends JPanel {
 				new EmptyBorder(8, 12, 8, 12)));
 		searchPanel.add(txtSearch);
 
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
+		var btnSearch = createButton("Search", PRIMARY_BLUE, 110);
 		btnSearch.addActionListener(e -> search());
 		searchPanel.add(btnSearch);
 
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
+		btnAdd = createButton("+ Add new", ACCENT_BLUE, 110);
 		btnAdd.addActionListener(e -> addNew());
 		searchPanel.add(btnAdd);
 
@@ -94,13 +94,13 @@ public class ShiftAdminPanel extends JPanel {
 		tableCard.setBackground(CARD_WHITE);
 		tableCard.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-		var header = new JLabel("DANH SÁCH CA LÀM VIỆC");
+		var header = new JLabel("SHIFT LIST");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 		tableCard.add(header, BorderLayout.NORTH);
 
-		model = new DefaultTableModel(new String[] { "ID","Tên Ca", "Giờ Bắt Đầu", "Giờ Kết Thúc" }, 0) {
+		model = new DefaultTableModel(new String[] { "Shift ID","Shift Name", "Start Time", "End Time" }, 0) {
 			@Override
 			public boolean isCellEditable(int r, int c) {
 				return false;
@@ -136,9 +136,9 @@ public class ShiftAdminPanel extends JPanel {
 		var actionsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		actionsPanel.setBackground(BG_LIGHT);
 
-		var btnDelete = createButton("Xóa", DANGER_RED, 110);
+		var btnDelete = createButton("Delete", DANGER_RED, 110);
 		btnDelete.addActionListener(e -> deleteRow());
-		var btnPDF = createButton("Xuất PDF", TEAL, 110);
+		var btnPDF = createButton("Export PDF", TEAL, 110);
 		btnPDF.addActionListener(e -> printPDF());
 
 		actionsPanel.add(btnDelete);
@@ -281,8 +281,8 @@ public class ShiftAdminPanel extends JPanel {
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi load dữ liệu: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Error loading data: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -290,10 +290,10 @@ public class ShiftAdminPanel extends JPanel {
 	private void search() {
 		var q = txtSearch.getText().trim();
 		if (q.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập từ khóa tìm kiếm!", "Thông Báo",
+			JOptionPane.showMessageDialog(this, "Please enter a search keyword!", "Notification",
 					JOptionPane.WARNING_MESSAGE);
 		} else {
-			JOptionPane.showMessageDialog(this, "Đang tìm: " + q + " (demo)", "Tìm Kiếm",
+			JOptionPane.showMessageDialog(this, "Searching: " + q + " (demo)", "Search",
 					JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
@@ -309,7 +309,7 @@ public class ShiftAdminPanel extends JPanel {
 		var r = table.getSelectedRow();
 		if (r != -1) {
 			var rowId = (int)model.getValueAt(r, 0);
-			var cf = JOptionPane.showConfirmDialog(this, "Xóa ca làm này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+			var cf = JOptionPane.showConfirmDialog(this, "Delete this shift?", "Confirm", JOptionPane.YES_NO_OPTION);
 			if (cf == JOptionPane.YES_OPTION) {
 
 				var shiftService = new ShiftService();
@@ -318,18 +318,18 @@ public class ShiftAdminPanel extends JPanel {
 					loadShiftTable();
 					formPanel.setVisible(false);
 					btnAdd.setVisible(true);
-					JOptionPane.showMessageDialog(this, "Đã xóa thành công!", "Thông Báo",
+					JOptionPane.showMessageDialog(this, "Deleted successfully!", "Notification",
 							JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
 		} else {
-			JOptionPane.showMessageDialog(this, "Chọn dòng cần xóa!", "Cảnh Báo", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Please select a row to delete!", "Warning", JOptionPane.WARNING_MESSAGE);
 		}
 	}
 
 	private void printPDF() {
 		try {
-			var h = new MessageFormat("DANH SÁCH CA LÀM");
+			var h = new MessageFormat("SHIFT LIST");
 			var f = new MessageFormat("Trang {0}");
 			table.print(JTable.PrintMode.FIT_WIDTH, h, f);
 			JOptionPane.showMessageDialog(this, "Xuất PDF thành công!", "Thành Công",
@@ -354,15 +354,15 @@ public class ShiftAdminPanel extends JPanel {
 				var checkAdd = shiftService.add(s);
 				if(checkAdd) {
 					loadShiftTable();
-					JOptionPane.showMessageDialog(this, "Thêm ca làm thành công!", "Thành Công",
+					JOptionPane.showMessageDialog(this, "Shift added successfully!", "success",
 							JOptionPane.INFORMATION_MESSAGE);
 				}else {
-					JOptionPane.showMessageDialog(this, "Lỗi khi thêm ca làm!", "Lỗi",
+					JOptionPane.showMessageDialog(this, "Error adding shift!", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Exception", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Exception", JOptionPane.ERROR_MESSAGE);
 			}
 
 		} else {
@@ -379,10 +379,10 @@ public class ShiftAdminPanel extends JPanel {
 
 				if(checkEdit) {
 					loadShiftTable();
-					JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thành Công",
+					JOptionPane.showMessageDialog(this, "Updated successfully!", "Success",
 							JOptionPane.INFORMATION_MESSAGE);
 				}else {
-					JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật!", "Lỗi",
+					JOptionPane.showMessageDialog(this, "Error updating shift!", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
 			}

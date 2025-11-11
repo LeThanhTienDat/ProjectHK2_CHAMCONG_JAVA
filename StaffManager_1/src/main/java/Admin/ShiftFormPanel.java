@@ -51,7 +51,7 @@ public class ShiftFormPanel extends JPanel {
 		card.setLayout(gbl_card);
 
 		// ===== Row 1 =====
-		var lblName = new JLabel("Tên Ca Làm");
+		var lblName = new JLabel("Shift Name");
 		lblName.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		var gbc_lblName = new GridBagConstraints();
 		gbc_lblName.insets = new Insets(10, 10, 5, 5);
@@ -70,7 +70,7 @@ public class ShiftFormPanel extends JPanel {
 		card.add(txtName, gbc_txtName);
 
 		// ===== Row 2 =====
-		var lblStart = new JLabel("Giờ Bắt Đầu (HH:mm)");
+		var lblStart = new JLabel("Start Time (HH:mm)");
 		lblStart.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		var gbc_lblStart = new GridBagConstraints();
 		gbc_lblStart.insets = new Insets(10, 10, 5, 5);
@@ -89,7 +89,7 @@ public class ShiftFormPanel extends JPanel {
 		card.add(txtStart, gbc_txtStart);
 
 		// ===== Row 3 =====
-		var lblEnd = new JLabel("Giờ Kết Thúc (HH:mm)");
+		var lblEnd = new JLabel("End Time (HH:mm)");
 		lblEnd.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		var gbc_lblEnd = new GridBagConstraints();
 		gbc_lblEnd.insets = new Insets(10, 10, 10, 5);
@@ -115,8 +115,8 @@ public class ShiftFormPanel extends JPanel {
 		flowLayout.setHgap(10);
 		add(panelActions, BorderLayout.SOUTH);
 
-		btnCancel = createButton("Hủy", DANGER_RED);
-		btnSave = createButton("Lưu", PRIMARY_BLUE);
+		btnCancel = createButton("Cancel", DANGER_RED);
+		btnSave = createButton("Save", PRIMARY_BLUE);
 
 		btnSave.addActionListener(e -> {
 			var cmd = addMode ? "add" : "update";

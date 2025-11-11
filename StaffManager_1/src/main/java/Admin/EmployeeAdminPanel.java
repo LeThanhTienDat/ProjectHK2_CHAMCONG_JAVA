@@ -76,7 +76,7 @@ public class EmployeeAdminPanel extends JPanel {
 		searchPanel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
 		searchPanel.setPreferredSize(new Dimension(0, 70));
 
-		txtSearch = new JTextField("Tìm kiếm nhân viên...");
+		txtSearch = new JTextField("Search by employee name...");
 		txtSearch.setColumns(30);
 		txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		txtSearch.setForeground(TEXT_PRIMARY);
@@ -88,7 +88,7 @@ public class EmployeeAdminPanel extends JPanel {
 		txtSearch.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent e) {
-				if (txtSearch.getText().equals("Tìm kiếm nhân viên...")) {
+				if (txtSearch.getText().equals("Search by employee name...")) {
 					txtSearch.setText("");
 					txtSearch.setForeground(TEXT_PRIMARY);
 				}
@@ -96,7 +96,7 @@ public class EmployeeAdminPanel extends JPanel {
 			@Override
 			public void focusLost(FocusEvent e) {
 				if (txtSearch.getText().isEmpty()) {
-					txtSearch.setText("Tìm kiếm nhân viên...");
+					txtSearch.setText("Search by employee name...");
 					txtSearch.setForeground(Color.GRAY);
 				}
 			}
@@ -112,14 +112,14 @@ public class EmployeeAdminPanel extends JPanel {
 				new EmptyBorder(8, 12, 8, 12)));
 		renderRestaurant();
 
-		btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
+		btnSearch = createButton("Search", PRIMARY_BLUE, 110);
+		btnAdd = createButton("+ Add new", ACCENT_BLUE, 110);
 
 		btnSearch.addActionListener(e -> searchEmployee());
 		btnAdd.addActionListener(e -> addEmployee());
 
 		searchPanel.add(txtSearch);
-		searchPanel.add(new JLabel("Theo Nhà Hàng: "));
+		searchPanel.add(new JLabel("By Restaurant: "));
 		searchPanel.add(resFilter);
 		searchPanel.add(btnSearch);
 		searchPanel.add(btnAdd);
@@ -145,7 +145,7 @@ public class EmployeeAdminPanel extends JPanel {
 		topPanel.setOpaque(false);
 
 
-		var header = new JLabel("DANH SÁCH NHÂN VIÊN");
+		var header = new JLabel("EMPLOYEE LIST");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
@@ -159,8 +159,8 @@ public class EmployeeAdminPanel extends JPanel {
 		northContentPanel.add(currentLegendPanel, BorderLayout.CENTER);
 		tableCard.add(northContentPanel, BorderLayout.NORTH);
 
-		String[] cols = { "Mã NV", "Họ tên", "Giới tính", "Ngày sinh", "Chức danh",
-				"Lương", "Bắt đầu hợp đồng", "Trạng thái hợp đồng","Hoạt động", "Điện thoại", "Nhà Hàng", "Email", "rawId" };
+		String[] cols = { "Employee ID", "Full name", "Gender", "Date of Birth", "Position",
+				"Salary", "Contract Start", "Contract Status","Active", "Phone", "Restaurant", "Email", "rawId" };
 
 		model = new DefaultTableModel(cols, 0) {
 			@Override
@@ -249,9 +249,9 @@ public class EmployeeAdminPanel extends JPanel {
 		var actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		actionPanel.setBackground(BG_LIGHT);
 
-		btnDelete = createButton("Xóa", DANGER_RED, 110);
-		btnContract = createButton("Hợp Đồng", PRIMARY_BLUE, 130);
-		btnPDF = createButton("Xuất PDF", TEAL, 120);
+		btnDelete = createButton("Delete", DANGER_RED, 110);
+		btnContract = createButton("Contract", PRIMARY_BLUE, 130);
+		btnPDF = createButton("Export PDF", TEAL, 120);
 
 		btnDelete.addActionListener(e -> deleteEmployee());
 		btnContract.addActionListener(e -> manageContract());
@@ -264,7 +264,6 @@ public class EmployeeAdminPanel extends JPanel {
 		add(actionPanel, BorderLayout.SOUTH);
 	}
 
-	// ===== HELPER METHODS =====
 	public static JButton createButton(String text, Color bg, int w) {
 		JButton b = new JButton(text) {
 			@Override
@@ -272,23 +271,16 @@ public class EmployeeAdminPanel extends JPanel {
 				var g2 = (Graphics2D) g;
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-				// Hiệu ứng hover mượt hơn
 				var fillColor = bg;
 				if (getModel().isPressed()) {
 					fillColor = bg.darker();
 				} else if (getModel().isRollover()) {
 					fillColor = bg.brighter();
 				}
-
-				// Bo tròn góc
 				g2.setColor(fillColor);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
-
-				// Viền nhẹ nếu muốn tinh tế hơn
 				g2.setColor(new Color(0, 0, 0, 20));
 				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
-
-				// Vẽ text giữa nút
 				g2.setColor(Color.WHITE);
 				var fm = g2.getFontMetrics();
 				var textWidth = fm.stringWidth(getText());
@@ -298,7 +290,6 @@ public class EmployeeAdminPanel extends JPanel {
 			}
 		};
 
-		// Cấu hình cơ bản
 		b.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		b.setForeground(Color.WHITE);
 		b.setPreferredSize(new Dimension(w, 36));
@@ -306,8 +297,6 @@ public class EmployeeAdminPanel extends JPanel {
 		b.setBorderPainted(false);
 		b.setFocusPainted(false);
 		b.setRolloverEnabled(true);
-
-		// 👇 Thêm dòng này để con trỏ chuột đổi thành bàn tay khi hover
 		b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
 		return b;
@@ -511,7 +500,7 @@ public class EmployeeAdminPanel extends JPanel {
 			reloadLegendPanel();
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi load dữ liệu: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Error loading data: " + ex.getMessage());
 		}
 	}
 
@@ -534,7 +523,7 @@ public class EmployeeAdminPanel extends JPanel {
 		var keyword = txtSearch.getText().trim();
 		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
 
-		var hasKeyword = !(keyword.isEmpty() || "Tìm kiếm nhân viên...".equals(keyword));
+		var hasKeyword = !(keyword.isEmpty() || "Search by employee name...".equals(keyword));
 		if (selectedRestaurant == null || selectedRestaurant.getId() == 0) {
 			loadEmployeeData(hasKeyword ? keyword : "");
 		} else {
@@ -545,7 +534,7 @@ public class EmployeeAdminPanel extends JPanel {
 		totalEmployees = 0;
 		totalNotContract =0;
 		var hasKeyword = keyword != null && !keyword.trim().isEmpty() &&
-				!"Tìm kiếm nhân viên...".equals(keyword.trim());
+				!"Search by employee name...".equals(keyword.trim());
 
 		var sql = new StringBuilder("""
 				SELECT e.id, e.name, e.role, e.gender, e.dob,
@@ -622,7 +611,7 @@ public class EmployeeAdminPanel extends JPanel {
 			reloadLegendPanel();
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu theo nhà hàng: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Error loading data by restaurant: " + ex.getMessage());
 		}
 	}
 
@@ -630,21 +619,21 @@ public class EmployeeAdminPanel extends JPanel {
 	private void deleteEmployee() {
 		var row = tableEmployee.getSelectedRow();
 		if (row == -1) {
-			JOptionPane.showMessageDialog(this, "Chọn nhân viên cần xóa!");
+			JOptionPane.showMessageDialog(this, "Please select an employee to delete!");
 			return;
 		}
-		if (JOptionPane.showConfirmDialog(this, "Xóa nhân viên này?", "Xác nhận",
+		if (JOptionPane.showConfirmDialog(this, "Delete this employee?", "Confirm",
 				JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 			var id = (int) model.getValueAt(row, 10);
 			try (var conn = DBConnection.getConnection();
 					var pst = conn.prepareStatement("DELETE FROM tbl_Employee WHERE id=?")) {
 				pst.setInt(1, id);
 				pst.executeUpdate();
-				JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
+				JOptionPane.showMessageDialog(this, "Employee deleted successfully!");
 				reloadTable();
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(this, "Lỗi khi xóa: " + ex.getMessage());
+				JOptionPane.showMessageDialog(this, "Error deleting record: " + ex.getMessage());
 			}
 		}
 	}
@@ -655,7 +644,7 @@ public class EmployeeAdminPanel extends JPanel {
 
 		if (emp.getName().isEmpty() || emp.getPhone().isEmpty() ||
 				emp.getEmail().isEmpty() || emp.getDob() == null) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!");
+			JOptionPane.showMessageDialog(this, "Please fill in all required fields!");
 			return;
 		}
 
@@ -713,22 +702,22 @@ public class EmployeeAdminPanel extends JPanel {
 			}
 
 			conn.commit();
-			JOptionPane.showMessageDialog(this, "Lưu thành công!");
+			JOptionPane.showMessageDialog(this, "Saved successfully!");
 			reloadTable();
 			handleFormCancel(null);
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi lưu dữ liệu: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Error saving data: " + ex.getMessage());
 		}
 	}
 
 	private void manageContract() {
-		JOptionPane.showMessageDialog(this, "Chức năng quản lý hợp đồng (demo)");
+		JOptionPane.showMessageDialog(this, "Contract management feature (demo)");
 	}
 
 	private void printPDF() {
-		JOptionPane.showMessageDialog(this, "Tính năng xuất PDF đang được phát triển!");
+		JOptionPane.showMessageDialog(this, "PDF export feature under development!");
 	}
 
 	private void reloadTable() {
@@ -740,7 +729,7 @@ public class EmployeeAdminPanel extends JPanel {
 			var restaurantService = new RestaurantService();
 			var restaurants = restaurantService.getAll();
 			resFilter.removeAllItems();
-			resFilter.addItem(new Restaurant(0, "Tất Cả Nhà Hàng", 0));
+			resFilter.addItem(new Restaurant(0, "All Restaurants", 0));
 			for (Restaurant r : restaurants) {
 				resFilter.addItem(r);
 			}
@@ -749,8 +738,8 @@ public class EmployeeAdminPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Error loading restaurant list: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	private void onRestaurantSelected() {
@@ -761,7 +750,7 @@ public class EmployeeAdminPanel extends JPanel {
 		var keyword = txtSearch.getText().trim();
 		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
 
-		var hasKeyword = !(keyword.isEmpty() || "Tìm kiếm nhân viên...".equals(keyword));
+		var hasKeyword = !(keyword.isEmpty() || "Search by employee name...".equals(keyword));
 
 		if (selectedRestaurant == null || selectedRestaurant.getId() == 0) {
 			if (hasKeyword) {
@@ -783,7 +772,7 @@ public class EmployeeAdminPanel extends JPanel {
 		var viewTotalEmployees = String.valueOf(totalEmployees);
 		var viewTotalNotContract = String.valueOf(totalNotContract);
 		String[][] legends = {
-				{"Tổng nhân viên: ", viewTotalEmployees }
+				{"Total Employees ", viewTotalEmployees }
 
 		};
 
@@ -808,7 +797,7 @@ public class EmployeeAdminPanel extends JPanel {
 		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		totalNotContract.setForeground(PRIMARY_BLUE);
 		totalNotContract.setPreferredSize(new Dimension(170, 20));
-		totalNotContract.setText("Chưa có hợp đồng / Hết hạn: ");
+		totalNotContract.setText("No Contract / Expired: ");
 
 		var desc = new JLabel();
 		desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
@@ -819,12 +808,12 @@ public class EmployeeAdminPanel extends JPanel {
 		item.add(totalNotContract, BorderLayout.WEST);
 		item.add(desc, BorderLayout.CENTER);
 		legend.add(item);
-		var summaryLegend = new JLabel("Chú thích: ");
+		var summaryLegend = new JLabel("Legend: ");
 		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		summaryLegend.setForeground(PRIMARY_BLUE);
 		legend.add(summaryLegend);
 
-		var redNote = new JLabel("Hết hạn hợp đồng", new ColorSquareIcon(DANGER_RED.brighter().brighter()), SwingConstants.LEFT);
+		var redNote = new JLabel("Contract Expired:", new ColorSquareIcon(DANGER_RED.brighter().brighter()), SwingConstants.LEFT);
 		redNote.setFont(new Font("Segoe UI", Font.PLAIN, 11));
 		redNote.setForeground(TEXT_PRIMARY);
 		legend.add(redNote);

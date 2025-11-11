@@ -57,7 +57,7 @@ public class EmployeeFormPanel extends JPanel {
 		setLayout(new BorderLayout());
 
 		// Header
-		var lblHeader = new JLabel("THÔNG TIN NHÂN VIÊN");
+		var lblHeader = new JLabel("EMPLOYEE INFORMATION");
 		lblHeader.setForeground(PRIMARY_BLUE);
 		lblHeader.setFont(new Font("Segoe UI", Font.BOLD, 16));
 		lblHeader.setBorder(new EmptyBorder(0, 0, 15, 0));
@@ -67,7 +67,7 @@ public class EmployeeFormPanel extends JPanel {
 		form.setBackground(Color.WHITE);
 		var gbc = new GridBagConstraints();
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets = new Insets(5, 5, 5, 5); // khoảng cách label-field hợp lý
+		gbc.insets = new Insets(5, 5, 5, 5);
 
 		var row = 0;
 
@@ -75,7 +75,7 @@ public class EmployeeFormPanel extends JPanel {
 		gbc.gridy = row;
 
 		gbc.gridx = 0; gbc.weightx = 0; // label không giãn
-		form.add(label("Mã NV:"), gbc);
+		form.add(label("Employee ID:"), gbc);
 		txtID = field("Auto", false);
 		gbc.gridx = 1; gbc.weightx = 1.0; // field giãn
 		form.add(txtID, gbc);
@@ -84,7 +84,7 @@ public class EmployeeFormPanel extends JPanel {
 		form.add(Box.createHorizontalStrut(40), gbc);
 
 		gbc.gridx = 3; gbc.weightx = 0; // label không giãn
-		form.add(label("Họ Tên:"), gbc);
+		form.add(label("Full name:"), gbc);
 		txtName = field("", true);
 		gbc.gridx = 4; gbc.weightx = 1.0; // field giãn
 		form.add(txtName, gbc);
@@ -95,7 +95,7 @@ public class EmployeeFormPanel extends JPanel {
 		gbc.gridy = row;
 
 		gbc.gridx = 0; gbc.weightx = 0;
-		form.add(label("Ngày sinh (dd/mm/YYYY):"), gbc);
+		form.add(label("Date of Birth (dd/MM/YYYY):"), gbc);
 		txtDOB = field("01/01/1990", true);
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		form.add(txtDOB, gbc);
@@ -103,8 +103,8 @@ public class EmployeeFormPanel extends JPanel {
 		gbc.gridx = 2; gbc.weightx = 0;
 
 		gbc.gridx = 3; gbc.weightx = 0;
-		form.add(label("Chức vụ:"), gbc);
-		cmbRole = combo(new String[] {"Nhân viên", "Giám sát", "Quản lý"});
+		form.add(label("Position:"), gbc);
+		cmbRole = combo(new String[] {"Employee", "Supervisor", "Manager"});
 		gbc.gridx = 4; gbc.weightx = 1.0;
 		form.add(cmbRole, gbc);
 
@@ -123,7 +123,7 @@ public class EmployeeFormPanel extends JPanel {
 
 		gbc.gridx = 3; gbc.weightx = 0;
 		form.add(label("Gender:"), gbc);
-		cmbGender = combo(new String[] {"Nam","Nữ"});
+		cmbGender = combo(new String[] {"Male","Female"});
 		gbc.gridx = 4; gbc.weightx = 1.0;
 		form.add(cmbGender, gbc);
 
@@ -141,7 +141,7 @@ public class EmployeeFormPanel extends JPanel {
 		gbc.gridx = 2; gbc.weightx = 0;
 
 		gbc.gridx = 3; gbc.weightx = 0;
-		form.add(label("Nhà hàng:"), gbc);
+		form.add(label("Restaurant:"), gbc);
 		cmbRestaurant = combo(new String[] {});
 		loadRestaurants();
 		gbc.gridx = 4; gbc.weightx = 1.0;
@@ -152,8 +152,8 @@ public class EmployeeFormPanel extends JPanel {
 		gbc.gridy = row;
 
 		gbc.gridx = 0; gbc.weightx = 0;
-		form.add(label("Trạng thái:"), gbc);
-		cmbActive = combo(new String[] {"Đang làm", "Đã nghỉ"});
+		form.add(label("Status:"), gbc);
+		cmbActive = combo(new String[] {"Active", "Inactive"});
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		form.add(cmbActive, gbc);
 
@@ -162,8 +162,8 @@ public class EmployeeFormPanel extends JPanel {
 		// Buttons
 		var btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
 		btnPanel.setBackground(Color.WHITE);
-		btnSave = button("Lưu", SUCCESS_GREEN, this::handleSave);
-		btnCancel = button("Hủy", DANGER_RED, this::handleCancel);
+		btnSave = button("Save", SUCCESS_GREEN, this::handleSave);
+		btnCancel = button("Cancel", DANGER_RED, this::handleCancel);
 		btnPanel.add(btnCancel);
 		btnPanel.add(btnSave);
 		add(btnPanel, BorderLayout.SOUTH);
@@ -251,13 +251,13 @@ public class EmployeeFormPanel extends JPanel {
 
 			var today = new Date();
 			if (dob.after(today)) {
-				throw new Exception("Ngày sinh không được lớn hơn hôm nay.");
+				throw new Exception("Date of birth cannot be later than today.");
 			}
 		} catch (Exception ex) {
 			javax.swing.JOptionPane.showMessageDialog(
 					this,
-					"Ngày sinh không hợp lệ! Vui lòng nhập đúng định dạng dd/MM/yyyy.",
-					"Lỗi nhập liệu",
+					"Invalid date of birth! Please enter in dd/MM/yyyy format.",
+					"Input Error",
 					javax.swing.JOptionPane.ERROR_MESSAGE
 					);
 			txtDOB.requestFocus();
@@ -272,7 +272,7 @@ public class EmployeeFormPanel extends JPanel {
 		emp.setGender(getGenderCode((String)cmbGender.getSelectedItem()));
 
 		var activeStatus = (String) cmbActive.getSelectedItem();
-		var activeVal = "Đang làm".equals(activeStatus) ? 1 : 0;
+		var activeVal = "Active".equals(activeStatus) ? 1 : 0;
 		emp.setActive(activeVal);
 
 		if(saveListener != null) {
@@ -341,10 +341,10 @@ public class EmployeeFormPanel extends JPanel {
 				} else {
 					activeVal = Integer.parseInt(activeObj.toString());
 				}
-				activeStr = (activeVal == 1) ? "Đang làm" : "Đã nghỉ";
+				activeStr = (activeVal == 1) ? "Active" : "Inactive";
 			}
 		} catch (Exception ex) {
-			activeStr = "Hoạt động";
+			activeStr = "Active";
 		}
 		cmbActive.setSelectedItem(activeStr);
 
@@ -416,12 +416,12 @@ public class EmployeeFormPanel extends JPanel {
 
 	public String getDisplayRole(String roleCode) {
 		if (roleCode == null) {
-			return "Nhân viên";
+			return "Employee";
 		}
 		return switch (roleCode.toLowerCase()) {
-		case "giamsat" -> "Giám sát";
-		case "quanly" -> "Quản lý";
-		default -> "Nhân viên";
+		case "giamsat" -> "Supervisor";
+		case "quanly" -> "Manager";
+		default -> "Employee";
 		};
 	}
 
@@ -430,16 +430,16 @@ public class EmployeeFormPanel extends JPanel {
 			return "nhanvien";
 		}
 		return switch (displayName) {
-		case "Giám sát" -> "giamsat";
-		case "Quản lý" -> "quanly";
+		case "Supervisor" -> "giamsat";
+		case "Manager" -> "quanly";
 		default -> "nhanvien";
 		};
 	}
 	private String getGenderCode(String display) {
-		if ("Nam".equalsIgnoreCase(display)) {
+		if ("Male".equalsIgnoreCase(display)) {
 			return "nam";
 		}
-		if ("Nữ".equalsIgnoreCase(display)) {
+		if ("Female".equalsIgnoreCase(display)) {
 			return "nu";
 		}
 		return null;

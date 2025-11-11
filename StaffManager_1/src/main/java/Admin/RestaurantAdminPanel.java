@@ -63,7 +63,7 @@ public class RestaurantAdminPanel extends JPanel {
 		searchPanel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
 		searchPanel.setPreferredSize(new Dimension(0, 70));
 
-		txtSearch = new JTextField("Tìm kiếm nhà hàng...");
+		txtSearch = new JTextField("Search for restaurant name...");
 		txtSearch.setPreferredSize(new Dimension(400, 36));
 		txtSearch.setColumns(30);
 		txtSearch.setBackground(new Color(248, 250, 252));
@@ -75,8 +75,8 @@ public class RestaurantAdminPanel extends JPanel {
 				));
 		txtSearch.setOpaque(true);
 
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
+		var btnSearch = createButton("Search", PRIMARY_BLUE, 110);
+		btnAdd = createButton("+ Add new", ACCENT_BLUE, 110);
 		btnSearch.addActionListener(e -> searchRestaurant());
 		btnAdd.addActionListener(e -> addRestaurant());
 
@@ -97,14 +97,14 @@ public class RestaurantAdminPanel extends JPanel {
 		tableCard.setBackground(CARD_WHITE);
 		tableCard.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-		var header = new JLabel("DANH SÁCH NHÀ HÀNG", SwingConstants.LEFT);
+		var header = new JLabel("RESTAURANT LIST", SwingConstants.LEFT);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 		tableCard.add(header, BorderLayout.NORTH);
 
 		String[] cols = {
-				"Mã NH", "Tên nhà hàng", "Đường","Tổng nhân viên","rawId","streetId"
+				"Restaurant ID", "Restaurant Name", "Street","Total Employees","rawId","streetId"
 		};
 		model = new DefaultTableModel(cols, 0);
 		loadRestaurantData("");
@@ -141,11 +141,11 @@ public class RestaurantAdminPanel extends JPanel {
 		var actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		actionPanel.setBackground(BG_LIGHT);
 
-		var btnDelete = createButton("Xóa", DANGER_RED, 110);
+		var btnDelete = createButton("Delete", DANGER_RED, 110);
 		btnDelete.addActionListener(e -> deleteRestaurant());
-		var btnManager = createButton("Quản Lý Nhân Viên", PRIMARY_BLUE, 160);
+		var btnManager = createButton("Manage Employees", PRIMARY_BLUE, 160);
 		btnManager.addActionListener(e -> manageEmployees());
-		var btnPDF = createButton("Xuất PDF", TEAL, 120);
+		var btnPDF = createButton("Export PDF", TEAL, 120);
 		btnPDF.addActionListener(e -> printPDF());
 
 		actionPanel.add(btnDelete);
@@ -172,7 +172,7 @@ public class RestaurantAdminPanel extends JPanel {
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi load dữ liệu: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Error loading data: " + ex.getMessage());
 		}
 	}
 
@@ -301,7 +301,7 @@ public class RestaurantAdminPanel extends JPanel {
 				r.setStreetId((int) data[2]);
 				var checkAdd = resService.add(r);
 				if(checkAdd) {
-					JOptionPane.showMessageDialog(this, "Thêm nhà hàng mới thành công!", "Thành Công", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(this, "New restaurant added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 				}
 			} else if ("update".equals(command)) {
 				var row = tableRestaurant.getSelectedRow();
@@ -312,7 +312,7 @@ public class RestaurantAdminPanel extends JPanel {
 				r.setStreetId((int) data[2]);
 				var checkEdit = resService.update(r);
 				if(checkEdit) {
-					JOptionPane.showMessageDialog(this, "Cập nhật nhà hàng thành công!", "Thành Công", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(this, "Restaurant updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
 
@@ -320,7 +320,7 @@ public class RestaurantAdminPanel extends JPanel {
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi khi lưu dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Error saving data: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 		}
 
 		formPanel.setVisible(false);
@@ -352,28 +352,28 @@ public class RestaurantAdminPanel extends JPanel {
 		try {
 			var row = tableRestaurant.getSelectedRow();
 			if (row == -1) {
-				JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà hàng cần xóa!");
+				JOptionPane.showMessageDialog(this, "Please select a restaurant to delete!");
 				return;
 			}
-			if (JOptionPane.showConfirmDialog(this, "Xóa nhà hàng này?", "Xác nhận",
+			if (JOptionPane.showConfirmDialog(this, "Delete this restaurant?", "Confirm",
 					JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 				var rowId = (int)model.getValueAt(row, 4);
 				var resService = new RestaurantService();
 				var checkDel = resService.delete(rowId);
 				if(checkDel) {
-					JOptionPane.showMessageDialog(this, "Đã xóa nhà hàng thành công!");
+					JOptionPane.showMessageDialog(this, "Restaurant deleted successfully!");
 				}
 				formPanel.setVisible(false);
 				tableCard.setVisible(true);
 				loadRestaurantData("");
 			}
 		}catch(Exception ex) {
-			JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Error " + ex.getMessage());
 		}
 	}
 
 	private void manageEmployees() {
-		JOptionPane.showMessageDialog(this, "Chức năng quản lý nhân viên của nhà hàng (demo)");
+		JOptionPane.showMessageDialog(this, "Restaurant employee management feature (demo)");
 	}
 
 	private void printPDF() {

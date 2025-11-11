@@ -61,13 +61,13 @@ public class ContractFormPanel extends JPanel {
 		txtStart = createField();
 		txtEnd = createField();
 		txtSalary = createField();
-		cmbStatus = new JComboBox<>(new String[] { "Active", "Expired", "Pending" });
+		cmbStatus = new JComboBox<>(new String[] { "Active", "Expired"});
 
 		cmbStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		cmbStatus.setBackground(new Color(248, 250, 252));
 		cmbStatus.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
-				new EmptyBorder(8, 12, 8, 12) // padding giống các text field
+				new EmptyBorder(8, 12, 8, 12)
 				));
 		cmbStatus.setPreferredSize(new Dimension(0, 36));
 
@@ -106,7 +106,7 @@ public class ContractFormPanel extends JPanel {
 		gbc_cmbEmployee.gridx = 1;
 		gbc_cmbEmployee.gridy = 3;
 
-		String[] positionList = {"Nhân viên", "Giám sát", "Quản lý"};
+		String[] positionList = {"Employee", "Supervisor", "Manager"};
 		cmbPosition = new JComboBox<>(positionList);
 		cmbPosition.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		cmbPosition.setBackground(new Color(248, 250, 252));
@@ -120,23 +120,23 @@ public class ContractFormPanel extends JPanel {
 		gbc_cmbPosition.gridy = 3;
 
 
-		addField(card, gc, 0, "Tên Nhà Hàng", cmbRestaurant);
-		addField(card, gc, 1, "Tên Nhân Viên",cmbEmployee);
-		addField(card, gc, 2, "Vị Trí", cmbPosition);
-		addField(card, gc, 3, "Ngày Bắt Đầu (yyyy-MM-dd)", txtStart);
-		addField(card, gc, 4, "Ngày Kết Thúc (yyyy-MM-dd)", txtEnd);
-		addField(card, gc, 5, "Lương Cơ Bản", txtSalary);
-		addField(card, gc, 6, "Trạng Thái Hợp Đồng", cmbStatus);
+		addField(card, gc, 0, "Restaurant Name", cmbRestaurant);
+		addField(card, gc, 1, "Employee Name",cmbEmployee);
+		addField(card, gc, 2, "Position", cmbPosition);
+		addField(card, gc, 3, "Start Date (yyyy-MM-dd)", txtStart);
+		addField(card, gc, 4, "End Date (yyyy-MM-dd)", txtEnd);
+		addField(card, gc, 5, "Basic Salary", txtSalary);
+		addField(card, gc, 6, "Contract Status", cmbStatus);
 
 		var actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-		btnCancel = createButton("Hủy", DANGER_RED);
-		btnSave = createButton("add", PRIMARY_BLUE);
+		btnCancel = createButton("Cancel", DANGER_RED);
+		btnSave = createButton("Add", PRIMARY_BLUE);
 
 		btnSave.addActionListener(e -> {
 			try {
 				var selectedEmployee = (Employee) cmbEmployee.getSelectedItem();
 				if (selectedEmployee == null) {
-					JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(this, "Please select an employee!", "Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 
@@ -154,8 +154,8 @@ public class ContractFormPanel extends JPanel {
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				JOptionPane.showMessageDialog(this,
-						"Lỗi khi xử lý nút Lưu: " + ex.getMessage(),
-						"Lỗi",
+						"Error while processing Save button: " + ex.getMessage(),
+						"Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
 		});
@@ -258,8 +258,8 @@ public class ContractFormPanel extends JPanel {
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				JOptionPane.showMessageDialog(this,
-						"Lỗi khi tải nhân viên cho nhà hàng: " + ex.getMessage(),
-						"Lỗi", JOptionPane.ERROR_MESSAGE);
+						"Error loading employees for restaurant: " + ex.getMessage(),
+						"Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 
@@ -274,7 +274,7 @@ public class ContractFormPanel extends JPanel {
 		System.out.println("[DEBUG] Salary text = " + txtSalary.getText().trim());
 		var selectedEmployee = (Employee) cmbEmployee.getSelectedItem();
 		if (selectedEmployee == null) {
-			JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Please select an employee!", "Error", JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
 
@@ -298,8 +298,8 @@ public class ContractFormPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Vui lòng nhập đúng định dạng ngày (yyyy-MM-dd) và lương là số nguyên!",
-					"Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+					"Please enter the correct date format (yyyy-MM-dd) and salary as a number!",
+					"Data Error", JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
 	}
@@ -327,8 +327,8 @@ public class ContractFormPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Error loading restaurant list: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -355,26 +355,26 @@ public class ContractFormPanel extends JPanel {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(
 					this,
-					"Lỗi khi tải nhân viên cho nhà hàng này: " + ex.getMessage(),
-					"Lỗi",
+					"Error loading employees for this restaurant: " + ex.getMessage(),
+					"Error",
 					JOptionPane.ERROR_MESSAGE
 					);
 		}
 	}
 	public String mapRoleDisplay(String roleCode) {
 		return switch (roleCode) {
-		case "quanly" -> "Quản lý";
-		case "giamsat" -> "Giám sát";
-		case "nhanvien" -> "Nhân viên";
+		case "quanly" -> "Manager";
+		case "giamsat" -> "Supervisor";
+		case "nhanvien" -> "Employee";
 		default -> roleCode;
 		};
 	}
 
 	public String mapRoleCode(String displayName) {
 		return switch (displayName) {
-		case "Quản lý" -> "quanly";
-		case "Giám sát" -> "giamsat";
-		case "Nhân viên" -> "nhanvien";
+		case "Manager" -> "quanly";
+		case "Supervisor" -> "giamsat";
+		case "Employee" -> "nhanvien";
 		default -> displayName.toLowerCase();
 		};
 	}

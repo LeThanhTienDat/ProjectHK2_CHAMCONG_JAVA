@@ -59,7 +59,7 @@ public class RestaurantFormPanel extends JPanel {
 		gbl_contentPanel.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
 		contentPanel.setLayout(gbl_contentPanel);
 
-		var lblHeader = new JLabel("THÔNG TIN NHÀ HÀNG");
+		var lblHeader = new JLabel("RESTAURANT INFORMATION");
 		lblHeader.setForeground(new Color(25, 118, 210));
 		lblHeader.setFont(new Font("Segoe UI", Font.BOLD, 16));
 		var gbc_lblHeader = new GridBagConstraints();
@@ -91,7 +91,7 @@ public class RestaurantFormPanel extends JPanel {
 		contentPanel.add(txtID, gbc_txtId);
 		txtID.setColumns(10);
 
-		var lblName = new JLabel("Tên Nhà Hàng:");
+		var lblName = new JLabel("Restaurant Name:");
 		lblName.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		var gbc_lblName = new GridBagConstraints();
 		gbc_lblName.anchor = GridBagConstraints.WEST;
@@ -111,7 +111,7 @@ public class RestaurantFormPanel extends JPanel {
 		contentPanel.add(txtName, gbc_txtName);
 		txtName.setColumns(10);
 
-		var lblStreet = new JLabel("Tên Đường:");
+		var lblStreet = new JLabel("Street Name:");
 		lblStreet.setFont(new Font("Segoe UI", Font.BOLD, 13));
 		var gbc_lblStreet = new GridBagConstraints();
 		gbc_lblStreet.anchor = GridBagConstraints.WEST;
@@ -228,8 +228,8 @@ public class RestaurantFormPanel extends JPanel {
 	private void handleSave(ActionEvent e) {
 		if (txtName.getText().trim().isEmpty() || cmbStreet.getSelectedItem() == null) {
 			JOptionPane.showMessageDialog(this,
-					"Vui lòng nhập đầy đủ thông tin bắt buộc!",
-					"Cảnh Báo",
+					"Please fill in all required information!",
+					"Warning",
 					JOptionPane.WARNING_MESSAGE);
 			return;
 		}
@@ -261,8 +261,8 @@ public class RestaurantFormPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải danh sách tên đường: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Error loading street list: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 

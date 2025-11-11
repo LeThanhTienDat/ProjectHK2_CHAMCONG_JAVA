@@ -159,7 +159,7 @@ public class ChangePasswordPanel extends JFrame {
 		signUpPanel.setBackground(Color.WHITE);
 		signUpPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		var lblNoAccount = new JLabel("Forgot password? ");
+		var lblNoAccount = new JLabel("Already have an account? ");
 		lblNoAccount.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 		lblNoAccount.setForeground(TEXT_LIGHT);
 
@@ -170,7 +170,7 @@ public class ChangePasswordPanel extends JFrame {
 		lblSignUp.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				new ResetPassword().setVisible(true);
+				new LoginForm().setVisible(true);
 				dispose();
 			}
 
@@ -274,6 +274,10 @@ public class ChangePasswordPanel extends JFrame {
 		var hashedPassword = hashPassword(password, salt);
 		var checkUpdate = accountService.updatePassword(accountId, hashedPassword, salt);
 		if(checkUpdate) {
+			JOptionPane.showMessageDialog(this,
+					"Your password has been reset successful, login now!",
+					"Warning",
+					JOptionPane.WARNING_MESSAGE);
 			new LoginForm().setVisible(true);
 			dispose();
 		}else {

@@ -67,12 +67,12 @@ public class ProfileAdminPanel extends JPanel {
 		avatar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
 		avatar.setHorizontalAlignment(SwingConstants.CENTER);
 
-		var nameLabel = new JLabel("Quản Trị Viên Chính");
+		var nameLabel = new JLabel("Chief Administrator");
 		nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
 		nameLabel.setForeground(TEXT_PRIMARY);
 		nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-		var roleLabel = new JLabel("Admin - Quản lý hệ thống");
+		var roleLabel = new JLabel("Admin - System Manager");
 		roleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 		roleLabel.setForeground(TEXT_SECONDARY);
 		roleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -102,14 +102,14 @@ public class ProfileAdminPanel extends JPanel {
 		separator1.setForeground(new Color(224, 235, 250));
 		infoContainer.add(separator1);
 
-		var phonePanel = createInfoRow("📱 Số điện thoại:", "+84 123 456 789");
+		var phonePanel = createInfoRow("📱 Phone:", "+84 123 456 789");
 		infoContainer.add(phonePanel);
 
 		var separator2 = new JSeparator(SwingConstants.HORIZONTAL);
 		separator2.setForeground(new Color(224, 235, 250));
 		infoContainer.add(separator2);
 
-		var joinedPanel = createInfoRow("📅 Ngày tham gia:", "01/01/2023");
+		var joinedPanel = createInfoRow("📅 Joined Date:", "01/01/2023");
 		infoContainer.add(joinedPanel);
 
 		return infoContainer;
@@ -135,7 +135,7 @@ public class ProfileAdminPanel extends JPanel {
 	}
 
 	private JButton createLogoutButton() {
-		var btn = new JButton("Đăng Xuất");
+		var btn = new JButton("Logout");
 		btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
 		btn.setForeground(Color.WHITE);
 		btn.setBackground(PRIMARY_BLUE);
@@ -159,8 +159,8 @@ public class ProfileAdminPanel extends JPanel {
 		});
 
 		btn.addActionListener(e -> {
-			if (JOptionPane.showConfirmDialog(ProfileAdminPanel.this, "Bạn có chắc chắn muốn đăng xuất?",
-					"Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+			if (JOptionPane.showConfirmDialog(ProfileAdminPanel.this, "Are you sure you want to logout?",
+					"Confirm", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 				new LoginForm().setVisible(true);
 				SwingUtilities.getWindowAncestor(ProfileAdminPanel.this).dispose();
 			}

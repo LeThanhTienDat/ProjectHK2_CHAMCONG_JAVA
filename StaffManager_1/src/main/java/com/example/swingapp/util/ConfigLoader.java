@@ -1,10 +1,10 @@
 package com.example.swingapp.util;
 
-
-
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import com.example.swingapp.ui.LoginForm;
+import com.formdev.flatlaf.FlatLightLaf;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -29,7 +29,11 @@ public class ConfigLoader {
 
 	public static void main(String[] args) {
 		loadEnvironment();
-
+		try {
+			UIManager.setLookAndFeel(new FlatLightLaf());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		SwingUtilities.invokeLater(() -> new LoginForm().setVisible(true));
 	}
 }

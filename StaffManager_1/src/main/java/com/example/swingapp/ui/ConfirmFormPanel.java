@@ -87,7 +87,7 @@ public class ConfirmFormPanel extends JFrame {
 	}
 	private void initModernComponents() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Input Code - Timekeeping System");
+		setTitle("Input Code - Attendance System");
 		setResizable(false);
 		setMinimumSize(new Dimension(450, 580));
 
@@ -102,7 +102,7 @@ public class ConfirmFormPanel extends JFrame {
 		card.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true));
 		card.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		var title = new JLabel("TIMEKEEPING SYSTEM", SwingConstants.CENTER);
+		var title = new JLabel("ATTENDANCE SYSTEM", SwingConstants.CENTER);
 		title.setFont(new Font("Segoe UI", Font.BOLD, 24));
 		title.setForeground(new Color(33, 33, 33));
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -305,6 +305,10 @@ public class ConfirmFormPanel extends JFrame {
 		}
 		var getTokenFromAccount = accountService.getTokenByAccountId(accountInfo.getAccountId());
 		if(getTokenFromAccount.equals(getCode)) {
+			JOptionPane.showMessageDialog(this,
+					"Code valid!",
+					"Warning",
+					JOptionPane.WARNING_MESSAGE);
 			new ChangePasswordPanel(accountInfo).setVisible(true);
 			dispose();
 		}else {

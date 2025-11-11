@@ -67,7 +67,7 @@ public class PayrollAdminPanel extends JPanel {
 		searchPanel.setPreferredSize(new Dimension(0, 70));
 		add(searchPanel, BorderLayout.NORTH);
 
-		txtSearch = styledField("Tìm kiếm theo tên nhân viên...", 400);
+		txtSearch = styledField("Search by employee name...", 400);
 		txtSearch.setColumns(30);
 		searchPanel.add(txtSearch);
 
@@ -91,23 +91,23 @@ public class PayrollAdminPanel extends JPanel {
 		var now = LocalDate.now();
 		for (var i = 14; i >= 0; i--) {
 			var month = now.minusMonths(i);
-			var item = String.format("Tháng %d / %d", month.getMonthValue(), month.getYear());
+			var item = String.format("%d / %d", month.getMonthValue(), month.getYear());
 			monthFilter.addItem(item);
 		}
 		monthFilter.setSelectedIndex(14);
 		monthFilter.addActionListener(e -> onRestaurantSelected());
 
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
+		var btnSearch = createButton("Search", PRIMARY_BLUE, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnSearch.addActionListener(e -> search());
 		}
-		searchPanel.add(new JLabel("Tháng: "));
+		searchPanel.add(new JLabel("Month: "));
 		searchPanel.add(monthFilter);
-		searchPanel.add(new JLabel("Theo Nhà Hàng: "));
+		searchPanel.add(new JLabel("By Restaurant: "));
 		searchPanel.add(resFilter);
 		searchPanel.add(btnSearch);
 
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
+		btnAdd = createButton("+ Add new", ACCENT_BLUE, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnAdd.addActionListener(e -> addNew());
 		}
@@ -128,11 +128,11 @@ public class PayrollAdminPanel extends JPanel {
 		// ==== ACTIONS (BOTTOM) ====
 		var actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		actions.setBackground(BG_LIGHT);
-		var btnDelete = createButton("Xóa", DANGER_RED, 110);
+		var btnDelete = createButton("Delete", DANGER_RED, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnDelete.addActionListener(e -> deleteRow());
 		}
-		var btnPDF = createButton("Xuất PDF", TEAL, 110);
+		var btnPDF = createButton("Export PDF", TEAL, 110);
 		if (!java.beans.Beans.isDesignTime()) {
 			btnPDF.addActionListener(e -> printPDF());
 		}
@@ -146,13 +146,13 @@ public class PayrollAdminPanel extends JPanel {
 		card.setBackground(CARD_WHITE);
 		card.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-		var header = new JLabel("BẢNG LƯƠNG NHÂN VIÊN");
+		var header = new JLabel("EMPLOYEE PAYROLL TABLE");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 		card.add(header, BorderLayout.NORTH);
 
-		String[] cols = { "Mã nhân viên", "Họ Tên","Ngày sinh", "Điện thoại" , "Nhà hàng", "Tháng",  "Đi trễ(min)", "Về sớm(min)","Tổng tăng ca", "Tổng giờ làm(hour)", "Tổng Lương" };
+		String[] cols = { "Employee ID", "Full name","Date of Birth", "Phone" , "Restaurant", "Month",  "Late Arrival(min)", "Early Leave(min)","Total Overtime", "Total Work (Hours)", "Total Salary" };
 		model = new DefaultTableModel(cols, 0) {
 			@Override
 			public Class<?> getColumnClass(int columnIndex) {
@@ -423,14 +423,14 @@ public class PayrollAdminPanel extends JPanel {
 
 	private void loadPayrollTable() {
 		var keyword = txtSearch.getText().trim();
-		if (keyword.isEmpty() || "Tìm kiếm theo tên nhân viên...".equals(keyword)) {
+		if (keyword.isEmpty() || "Search by employee name...".equals(keyword)) {
 			keyword = null;
 		}
 
 		var monthStr = (String) monthFilter.getSelectedItem();
 		int month = 0, year = 0;
 		if (monthStr != null && monthStr.contains("/")) {
-			var parts = monthStr.replace("Tháng", "").split("/");
+			var parts = monthStr.replace("Month", "").split("/");
 			month = Integer.parseInt(parts[0].trim());
 			year = Integer.parseInt(parts[1].trim());
 		}
@@ -479,7 +479,7 @@ public class PayrollAdminPanel extends JPanel {
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu bảng lương: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Error loading payroll data: " + ex.getMessage());
 		}
 	}
 	private void loadPayrollDataByRestaurant(int restaurantId, String keyword) {
@@ -499,7 +499,7 @@ public class PayrollAdminPanel extends JPanel {
 		if (!java.beans.Beans.isDesignTime()) {
 			var r = table.getSelectedRow();
 			if (r != -1) {
-				var cf = JOptionPane.showConfirmDialog(this, "Xóa bản ghi lương này?", "Xác nhận",
+				var cf = JOptionPane.showConfirmDialog(this, "Delete this payroll record?", "Confirm",
 						JOptionPane.YES_NO_OPTION);
 				if (cf == JOptionPane.YES_OPTION) {
 					model.removeRow(r);
@@ -563,7 +563,7 @@ public class PayrollAdminPanel extends JPanel {
 			var restaurantService = new RestaurantService();
 			var restaurants = restaurantService.getAll();
 			resFilter.removeAllItems();
-			resFilter.addItem(new Restaurant(0, "Tất Cả Nhà Hàng", 0));
+			resFilter.addItem(new Restaurant(0, "All Restaurants", 0));
 			for (Restaurant r : restaurants) {
 				resFilter.addItem(r);
 			}
@@ -572,8 +572,8 @@ public class PayrollAdminPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Error loading restaurant list: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	private void onRestaurantSelected() {

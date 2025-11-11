@@ -55,8 +55,8 @@ public class ShiftDetailsPanel extends JPanel {
 		gbc.gridy = 0;
 
 		// ========== CỘT 1 ==========
-		var statusText = ws.getCheckInTime() != null ? "Đã chấm công" : "Chưa chấm công";
-		var shiftLabel = new JLabel("<html><b>Ca Chính:</b> " + shiftFullName + "<br><i>" + statusText + "</i></html>");
+		var statusText = ws.getCheckInTime() != null ? "Checked in" : "Not checked in";
+		var shiftLabel = new JLabel("<html><b>Main Shift: </b> " + shiftFullName + "<br><i>" + statusText + "</i></html>");
 		shiftLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		shiftLabel.setForeground(PRIMARY_BLUE.darker());
 
@@ -82,23 +82,23 @@ public class ShiftDetailsPanel extends JPanel {
 		var actualIn = ws.getCheckInTime() != null ? ws.getCheckInTime().toLocalTime() : null;
 
 		var shiftInStr = shiftIn != null ? shiftIn.toString() : "--:--";
-		var actualInStr = actualIn != null ? actualIn.toString() : "Chưa IN";
+		var actualInStr = actualIn != null ? actualIn.toString() : "Not checked in";
 		var inNote = "";
 		inBg = LIGHT_BLUE;
 
 		if (actualIn != null && shiftIn != null) {
 			if (actualIn.isAfter(shiftIn)) {
 				var lateMinutes = Duration.between(shiftIn, actualIn).toMinutes();
-				inNote = "(Trễ " + lateMinutes + " phút)";
+				inNote = "(Late " + lateMinutes + " min)";
 				inBg = LIGHT_RED;
 			} else {
-				inNote = "(Đúng giờ)";
+				inNote = "(On Time)";
 			}
 		} else if (actualIn == null) {
-			inNote = "(Chưa IN)";
+			inNote = "(Not checked in)";
 		}
 
-		var shiftInLabel = new JLabel("Ca bắt đầu: " + shiftInStr);
+		var shiftInLabel = new JLabel("Shift start: " + shiftInStr);
 		shiftInLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		shiftInLabel.setForeground(new Color(80, 120, 180));
 
@@ -108,14 +108,14 @@ public class ShiftDetailsPanel extends JPanel {
 			try {
 				var workScheduleId = workSchedule.getId();
 				if (workScheduleId <= 0) {
-					JOptionPane.showMessageDialog(this, "Không tìm thấy ca làm hợp lệ!");
+					JOptionPane.showMessageDialog(this, "Valid shift not found!");
 					return;
 				}
 
 				var confirm = JOptionPane.showConfirmDialog(
 						this,
-						"Bạn có chắc chắn muốn check in ca làm này?",
-						"Xác nhận check-in",
+						"Are you sure you want to check in this shift?",
+						"Confirm check-in",
 						JOptionPane.YES_NO_OPTION,
 						JOptionPane.QUESTION_MESSAGE
 						);
@@ -126,20 +126,20 @@ public class ShiftDetailsPanel extends JPanel {
 
 				var success = workScheduleService.checkInShift(workScheduleId);
 				if (success) {
-					JOptionPane.showMessageDialog(this, "Check-in thành công!");
+					JOptionPane.showMessageDialog(this, "Check-in successful!");
 					parent.reloadForm();
 					parent.notifyDataChanged();
 				} else {
-					JOptionPane.showMessageDialog(this, "Check-in thất bại! Vui lòng thử lại.");
+					JOptionPane.showMessageDialog(this, "Check-in failed! Please try again.");
 				}
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi check-in!");
+				JOptionPane.showMessageDialog(this, "An error occurred during check-in!");
 			}
 		});
 
-		var actualInLabel = new JLabel("Check in thực tế: " + actualInStr + " " + inNote);
+		var actualInLabel = new JLabel("Actual check-in: " + actualInStr + " " + inNote);
 		actualInLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		actualInLabel.setForeground(Color.DARK_GRAY);
 
@@ -170,23 +170,23 @@ public class ShiftDetailsPanel extends JPanel {
 		var actualOut = ws.getCheckOutTime() != null ? ws.getCheckOutTime().toLocalTime() : null;
 
 		var shiftOutStr = shiftOut != null ? shiftOut.toString() : "--:--";
-		var actualOutStr = actualOut != null ? actualOut.toString() : "Chưa OUT";
+		var actualOutStr = actualOut != null ? actualOut.toString() : "Not checked out";
 		var outNote = "";
 		outBg = LIGHT_BLUE;
 
 		if (actualOut != null && shiftOut != null) {
 			if (actualOut.isBefore(shiftOut)) {
 				var earlyMinutes = Duration.between(actualOut, shiftOut).toMinutes();
-				outNote = "(Ra sớm " + earlyMinutes + " phút)";
+				outNote = "(Left early " + earlyMinutes + " min)";
 				outBg = LIGHT_RED;
 			} else {
-				outNote = "(Đúng giờ)";
+				outNote = "(On Time)";
 			}
 		} else if (actualOut == null) {
-			outNote = "(Chưa OUT)";
+			outNote = "(Not checked out)";
 		}
 
-		var shiftOutLabel = new JLabel("Ca kết thúc: " + shiftOutStr);
+		var shiftOutLabel = new JLabel("Shift end: " + shiftOutStr);
 		shiftOutLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		shiftOutLabel.setForeground(new Color(80, 120, 180));
 
@@ -196,14 +196,14 @@ public class ShiftDetailsPanel extends JPanel {
 			try {
 				var workScheduleId = workSchedule.getId();
 				if (workScheduleId <= 0) {
-					JOptionPane.showMessageDialog(this, "Không tìm thấy ca làm hợp lệ!");
+					JOptionPane.showMessageDialog(this, "Valid shift not found!");
 					return;
 				}
 
 				var confirm = JOptionPane.showConfirmDialog(
 						this,
-						"Bạn có chắc chắn muốn check out ca làm này?",
-						"Xác nhận check-out",
+						"Are you sure you want to check out this shift?",
+						"Confirm check-out",
 						JOptionPane.YES_NO_OPTION,
 						JOptionPane.QUESTION_MESSAGE
 						);
@@ -214,20 +214,20 @@ public class ShiftDetailsPanel extends JPanel {
 
 				var success = workScheduleService.checkOutShift(workScheduleId);
 				if (success) {
-					JOptionPane.showMessageDialog(this, "Check-out thành công!");
+					JOptionPane.showMessageDialog(this, "Check-out successful!");
 					parent.reloadForm();
 					parent.notifyDataChanged();
 				} else {
-					JOptionPane.showMessageDialog(this, "Check-out thất bại! Vui lòng thử lại.");
+					JOptionPane.showMessageDialog(this, "Check-out failed! Please try again.");
 				}
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi check-out!");
+				JOptionPane.showMessageDialog(this, "An error occurred during check-out!");
 			}
 		});
 
-		var actualOutLabel = new JLabel("Check out thực tế: " + actualOutStr + " " + outNote);
+		var actualOutLabel = new JLabel("Actual check-out: " + actualOutStr + " " + outNote);
 		actualOutLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		actualOutLabel.setForeground(Color.DARK_GRAY);
 

@@ -67,7 +67,7 @@ public class ReportAdminPanel extends JPanel {
 		setBackground(BG_LIGHT);
 
 		// ===== HEADER =====
-		var header = new JLabel("Báo Cáo & Thống Kê", SwingConstants.CENTER);
+		var header = new JLabel("Reports & Statistics", SwingConstants.CENTER);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 24));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(20, 0, 10, 0));
@@ -83,7 +83,7 @@ public class ReportAdminPanel extends JPanel {
 		filterPanel.setBackground(BG_LIGHT);
 		filterPanel.setBorder(new EmptyBorder(5, 15, 5, 15));
 
-		var lblMonth = new JLabel("Chọn tháng: ");
+		var lblMonth = new JLabel("Select Month: ");
 		lblMonth.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
 		monthFilter = new JComboBox<String>();
@@ -97,13 +97,13 @@ public class ReportAdminPanel extends JPanel {
 		var now = LocalDate.now();
 		for (var i = 14; i >= 0; i--) {
 			var month = now.minusMonths(i);
-			var item = String.format("Tháng %d / %d", month.getMonthValue(), month.getYear());
+			var item = String.format("%d / %d", month.getMonthValue(), month.getYear());
 			monthFilter.addItem(item);
 		}
 		monthFilter.setSelectedIndex(14);
 		monthFilter.addActionListener(e -> changeMonth());
 
-		var lblRestaurant = new JLabel("Chọn Nhà Hàng: ");
+		var lblRestaurant = new JLabel("Select Restaurant: ");
 		lblRestaurant.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
 		resFilter = new JComboBox<Restaurant>();
@@ -146,13 +146,13 @@ public class ReportAdminPanel extends JPanel {
 		lblTotalOvertime = new JLabel();
 		lblTotalOvertimeSalary = new JLabel();
 
-		row1.add(createKPIBlock("Tổng chi phí lương", new Color(230, 230, 255), Color.MAGENTA, lblTotalSalary));
+		row1.add(createKPIBlock("Total Salary Cost", new Color(230, 230, 255), Color.MAGENTA, lblTotalSalary));
 		row1.add(Box.createRigidArea(new Dimension(15, 0)));
-		row1.add(createKPIBlock("Tổng giờ làm", new Color(255, 230, 230), Color.RED, lblTotalHours));
+		row1.add(createKPIBlock("Total Work Hours", new Color(255, 230, 230), Color.RED, lblTotalHours));
 		row1.add(Box.createRigidArea(new Dimension(15, 0)));
-		row1.add(createKPIBlock("Tổng giờ tăng ca", new Color(230, 245, 255), Color.BLUE, lblTotalOvertime));
+		row1.add(createKPIBlock("Total Overtime Hours", new Color(230, 245, 255), Color.BLUE, lblTotalOvertime));
 		row1.add(Box.createRigidArea(new Dimension(15, 0)));
-		row1.add(createKPIBlock("Tổng lương tăng ca", new Color(255, 250, 230), new Color(255, 200, 0), lblTotalOvertimeSalary));
+		row1.add(createKPIBlock("Total Overtime Salary", new Color(255, 250, 230), new Color(255, 200, 0), lblTotalOvertimeSalary));
 
 		kpiContainer.add(row1);
 		kpiContainer.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -165,9 +165,9 @@ public class ReportAdminPanel extends JPanel {
 		lblEmployeeCount = new JLabel();
 		lblOntimePercentage = new JLabel();
 
-		row2.add(createKPIBlock("Tổng số nhân viên", new Color(235, 255, 235), new Color(0, 150, 136), lblEmployeeCount));
+		row2.add(createKPIBlock("Total Employees", new Color(235, 255, 235), new Color(0, 150, 136), lblEmployeeCount));
 		row2.add(Box.createRigidArea(new Dimension(15, 0)));
-		row2.add(createKPIBlock("Tỉ lệ đúng giờ", new Color(255, 240, 240), DANGER_RED, lblOntimePercentage));
+		row2.add(createKPIBlock("On-time Rate", new Color(255, 240, 240), DANGER_RED, lblOntimePercentage));
 
 		kpiContainer.add(row2);
 
@@ -179,19 +179,19 @@ public class ReportAdminPanel extends JPanel {
 
 		pieChartSalary = new PieChartPanel();
 		pieChartSalary.setPreferredSize(new Dimension(300, 250));
-		pieChartSalary.setTitle("Tỷ lệ chi phí lương giữa các nhà hàng");
+		pieChartSalary.setTitle("Salary Distribution Among Restaurants");
 		chartContainer.add(pieChartSalary);
 		chartContainer.add(Box.createRigidArea(new Dimension(20, 0)));
 
 		pieChartOnTime = new PieChartPanel();
 		pieChartOnTime.setPreferredSize(new Dimension(300, 250));
-		pieChartOnTime.setTitle("Tỷ lệ đúng giờ giữa các nhà hàng");
+		pieChartOnTime.setTitle("On-time Rate Among Restaurants");
 		chartContainer.add(pieChartOnTime);
 		chartContainer.add(Box.createRigidArea(new Dimension(20, 0)));
 
 		pieChartEmployee = new PieChartPanel();
 		pieChartEmployee.setPreferredSize(new Dimension(300, 250));
-		pieChartEmployee.setTitle("Tỷ lệ nhân sự giữa các nhà hàng");
+		pieChartEmployee.setTitle("Employee Distribution Among Restaurants");
 		chartContainer.add(pieChartEmployee);
 
 		contentPanel.add(kpiContainer);
@@ -269,10 +269,10 @@ public class ReportAdminPanel extends JPanel {
 			var ontimePercentage = report.getOntimePercentage();
 
 			lblTotalSalary.setText(String.format("%,.0f VNĐ", totalSalary));
-			lblTotalHours.setText(String.format("%,.0f giờ", totalHours));
-			lblTotalOvertime.setText(String.format("%,.0f giờ", totalOvertime));
+			lblTotalHours.setText(String.format("%,.0f Hours", totalHours));
+			lblTotalOvertime.setText(String.format("%,.0f Hours", totalOvertime));
 			lblTotalOvertimeSalary.setText(String.format("%,.0f VNĐ", totalOvertimeSalary));
-			lblEmployeeCount.setText(String.format("%d Người", totalEmployee));
+			lblEmployeeCount.setText(String.format("%d Persons", totalEmployee));
 			lblOntimePercentage.setText(String.format("%.1f %%", ontimePercentage));
 
 			if (pieChartSalary != null && report.getSalaryDistribution() != null) {
@@ -290,8 +290,8 @@ public class ReportAdminPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải dữ liệu thống kê: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Error loading report data: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	private ReportSummary getReportSummary() {
@@ -302,7 +302,7 @@ public class ReportAdminPanel extends JPanel {
 
 		int month = 0, year = 0;
 		if (monthStr != null && monthStr.contains("/")) {
-			var parts = monthStr.replace("Tháng", "").split("/");
+			var parts = monthStr.replace("Month", "").split("/");
 			month = Integer.parseInt(parts[0].trim());
 			year = Integer.parseInt(parts[1].trim());
 		}
@@ -402,7 +402,7 @@ public class ReportAdminPanel extends JPanel {
 			var restaurantService = new RestaurantService();
 			var restaurants = restaurantService.getAll();
 			resFilter.removeAllItems();
-			resFilter.addItem(new Restaurant(0, "Tất Cả Nhà Hàng", 0));
+			resFilter.addItem(new Restaurant(0, "All Restaurant", 0));
 			for (Restaurant r : restaurants) {
 				resFilter.addItem(r);
 			}
@@ -411,8 +411,8 @@ public class ReportAdminPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Lỗi tải danh sách Nhà Hàng: " + ex.getMessage(),
-					"Lỗi", JOptionPane.ERROR_MESSAGE);
+					"Error loading restaurant list: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 }

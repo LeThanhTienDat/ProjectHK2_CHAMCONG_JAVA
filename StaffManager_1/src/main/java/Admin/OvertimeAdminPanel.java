@@ -55,10 +55,7 @@ public class OvertimeAdminPanel extends JPanel {
 
 		var content = new JPanel(new BorderLayout(0, 15));
 		content.setBackground(BG_LIGHT);
-
-		// Khởi tạo form panel
 		formPanel = new OvertimeFormPanel();
-		// Gán listener ở đây để chắc chắn addMode đúng
 		formPanel.setOnSaveListener(this::onSave);
 		formPanel.setOnCancelListener(this::onCancel);
 		formPanel.setVisible(false);
@@ -69,9 +66,9 @@ public class OvertimeAdminPanel extends JPanel {
 
 		var actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		actions.setBackground(BG_LIGHT);
-		var btnDelete = createButton("Xóa", DANGER_RED, 110);
+		var btnDelete = createButton("Delete", DANGER_RED, 110);
 		btnDelete.addActionListener(e -> deleteRow());
-		var btnPDF = createButton("Xuất PDF", TEAL, 110);
+		var btnPDF = createButton("Export PDF", TEAL, 110);
 		btnPDF.addActionListener(e -> printPDF());
 		actions.add(btnDelete);
 		actions.add(btnPDF);
@@ -85,15 +82,15 @@ public class OvertimeAdminPanel extends JPanel {
 		p.setPreferredSize(new Dimension(0, 70));
 		p.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1, true));
 
-		txtSearch = styledField("Tìm kiếm loại OT...", 400);
+		txtSearch = styledField("Search OT type...", 400);
 		txtSearch.setColumns(30);
 		p.add(txtSearch);
 
-		var btnSearch = createButton("Tìm Kiếm", PRIMARY_BLUE, 110);
+		var btnSearch = createButton("Search", PRIMARY_BLUE, 110);
 		btnSearch.addActionListener(e -> search());
 		p.add(btnSearch);
 
-		btnAdd = createButton("+ Thêm Mới", ACCENT_BLUE, 110);
+		btnAdd = createButton("+ Add new", ACCENT_BLUE, 110);
 		btnAdd.addActionListener(e -> addNew());
 		p.add(btnAdd);
 		return p;
@@ -104,12 +101,12 @@ public class OvertimeAdminPanel extends JPanel {
 		card.setBackground(CARD_WHITE);
 		card.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-		var header = new JLabel("DANH SÁCH TĂNG CA");
+		var header = new JLabel("OVERTIME LIST");
 		header.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		header.setForeground(PRIMARY_BLUE);
 		header.setBorder(new EmptyBorder(0, 0, 15, 0));
 
-		String[] cols = { "ID", "Tên Loại OT", "Giờ Bắt Đầu", "Giờ Kết Thúc", "rawId" };
+		String[] cols = { "ID", "OT Type Name", "Start Time", "EndTime", "rawId" };
 		model = new DefaultTableModel(cols, 0);
 		loadOtData("");
 		table = new JTable(model);
@@ -249,10 +246,10 @@ public class OvertimeAdminPanel extends JPanel {
 	private void search() {
 		var q = txtSearch.getText().trim();
 		if (q.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập từ khóa tìm kiếm!", "Thông Báo",
+			JOptionPane.showMessageDialog(this, "Please enter a search keyword!", "Notification",
 					JOptionPane.WARNING_MESSAGE);
 		} else {
-			JOptionPane.showMessageDialog(this, "Đang tìm kiếm: " + q + " (Demo)", "Tìm Kiếm",
+			JOptionPane.showMessageDialog(this, "Searching: " + q + " (Demo)", "Search",
 					JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
@@ -268,7 +265,7 @@ public class OvertimeAdminPanel extends JPanel {
 		var r = table.getSelectedRow();
 		if (r != -1) {
 			var rowId = (int)model.getValueAt(r, 4);
-			var cf = JOptionPane.showConfirmDialog(this, "Xóa bản ghi OT này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+			var cf = JOptionPane.showConfirmDialog(this, "Delete this OT record?", "Confirm", JOptionPane.YES_NO_OPTION);
 			if (cf == JOptionPane.YES_OPTION) {
 				var ottService = new OTTypeService();
 				var checkDel = ottService.delete(rowId);
@@ -276,18 +273,18 @@ public class OvertimeAdminPanel extends JPanel {
 					loadOtData("");
 					formPanel.setVisible(false);
 					btnAdd.setVisible(true);
-					JOptionPane.showMessageDialog(this, "Đã xóa thành công!", "Thông Báo", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(this, "Deleted successfully!", "Notification", JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
 		} else {
-			JOptionPane.showMessageDialog(this, "Chọn dòng cần xóa!", "Cảnh Báo", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Please select a row to delete!", "Warning", JOptionPane.WARNING_MESSAGE);
 		}
 	}
 
 	private void printPDF() {
 		try {
-			var h = new MessageFormat("DANH SÁCH TĂNG CA");
-			var f = new MessageFormat("Trang {0}");
+			var h = new MessageFormat("OVERTIME LIST");
+			var f = new MessageFormat("Page {0}");
 			table.print(JTable.PrintMode.FIT_WIDTH, h, f);
 			JOptionPane.showMessageDialog(this, "Xuất PDF thành công!", "Thành Công", JOptionPane.INFORMATION_MESSAGE);
 		} catch (Exception ex) {
@@ -311,10 +308,10 @@ public class OvertimeAdminPanel extends JPanel {
 
 			if(checkAdd) {
 				loadOtData("");
-				JOptionPane.showMessageDialog(this, "Thêm Tăng ca thành công!", "Thành Công",
+				JOptionPane.showMessageDialog(this, "Overtime added successfully!", "Success",
 						JOptionPane.INFORMATION_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(this, "Lỗi khi Tăng ca làm!", "Lỗi",
+				JOptionPane.showMessageDialog(this, "Error while adding overtime!", "Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
 		} else {
@@ -331,10 +328,10 @@ public class OvertimeAdminPanel extends JPanel {
 
 				if(checkEdit) {
 					loadOtData("");
-					JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thành Công",
+					JOptionPane.showMessageDialog(this, "Updated successfully!", "Success",
 							JOptionPane.INFORMATION_MESSAGE);
 				}else {
-					JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật!", "Lỗi",
+					JOptionPane.showMessageDialog(this, "Update failed!", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
 			}
@@ -372,7 +369,7 @@ public class OvertimeAdminPanel extends JPanel {
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Lỗi load dữ liệu: " + ex.getMessage());
+			JOptionPane.showMessageDialog(this, "Failed loading data: " + ex.getMessage());
 		}
 	}
 }
