@@ -29,6 +29,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
+import com.example.swingapp.model.ComboItem;
 import com.example.swingapp.model.Contract;
 import com.example.swingapp.model.Restaurant;
 import com.example.swingapp.service.ContractService;
@@ -46,6 +47,7 @@ public class ContractAdminPanel extends JPanel {
 	private ContractFormPanel formPanel;
 	private JComboBox<String> cmbDate;
 	private JComboBox<Restaurant> resFilter;
+	private JComboBox<ComboItem> expiringContracts;
 	private boolean isInitializing = true;
 	private int totalEmployees = 0;
 	private int totalNotContract = 0;
@@ -106,11 +108,24 @@ public class ContractAdminPanel extends JPanel {
 
 		renderRestaurant();
 
+		expiringContracts = new JComboBox<ComboItem>();
+		expiringContracts.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		expiringContracts.setBackground(new Color(248, 250, 252));
+		expiringContracts.setPreferredSize(new Dimension(200, 36));
+		expiringContracts.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+				new EmptyBorder(8, 12, 8, 12)));
+		expiringContracts.removeAllItems();
+		expiringContracts.addItem(new ComboItem(0, "All contracts"));
+		expiringContracts.addItem(new ComboItem(1, "Expiring in 1 month"));
+
 		var btnSearch = createButton("Search", PRIMARY_BLUE, 110);
 		btnSearch.addActionListener(e -> search());
 		searchPanel.add(txtSearch);
 		searchPanel.add(new JLabel("Restaurant: "));
 		searchPanel.add(resFilter);
+		searchPanel.add(new JLabel("Expiring Contracts: "));
+		searchPanel.add(expiringContracts);
 		searchPanel.add(btnSearch);
 
 		btnAdd = createButton("+ Add new", ACCENT_BLUE, 110);
@@ -420,6 +435,8 @@ public class ContractAdminPanel extends JPanel {
 		var keyword = txtSearch.getText().trim();
 		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
 		var restaurantId = 0;
+		var getFlag = (ComboItem) expiringContracts.getSelectedItem();
+		var flagInt = (getFlag != null) ? getFlag.getValue() : 0;
 		if (selectedRestaurant != null) {
 			restaurantId = selectedRestaurant.getId();
 		}
@@ -428,7 +445,7 @@ public class ContractAdminPanel extends JPanel {
 		}
 
 		try (var conn = DBConnection.getConnection();
-				var stmt = conn.prepareCall("{CALL SP_GetContractInfo(?,?)}")) {
+				var stmt = conn.prepareCall("{CALL SP_GetContractInfo(?,?,?)}")) {
 
 			if (keyword == null || keyword.trim().isEmpty()) {
 				stmt.setNull(1, java.sql.Types.NVARCHAR);
@@ -436,6 +453,7 @@ public class ContractAdminPanel extends JPanel {
 				stmt.setString(1, keyword.trim());
 			}
 			stmt.setInt(2, restaurantId);
+			stmt.setInt(3, flagInt);
 			var rs = stmt.executeQuery();
 			model.setRowCount(0);
 
@@ -538,6 +556,7 @@ public class ContractAdminPanel extends JPanel {
 					"Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
+
 
 	private void onRestaurantSelected() {
 		if (isInitializing) {

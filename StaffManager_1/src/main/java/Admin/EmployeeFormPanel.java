@@ -309,16 +309,21 @@ public class EmployeeFormPanel extends JPanel {
 		}
 
 		var dbRole = rowData[4] != null ? rowData[4].toString() : "";
-		cmbRole.setSelectedItem(getDisplayRole(dbRole));
+		var roleDisplay = getDisplayRole(dbRole);
+		if (!comboContains(cmbRole, roleDisplay) && !roleDisplay.isEmpty()) {
+			cmbRole.addItem(roleDisplay);
+		}
+		cmbRole.setSelectedItem(roleDisplay);
 
 		txtEmail.setText(rowData[10] != null ? rowData[10].toString() : "0");
 
 		// --- Giới tính ---
 		var gender = rowData[2] != null ? rowData[2].toString() : "";
-		if (!comboContains(cmbGender, gender) && !gender.isEmpty()) {
-			cmbGender.addItem(gender);
+		var genderDisplay = mapGenderDisplay(gender);
+		if (!comboContains(cmbGender, genderDisplay) && !genderDisplay.isEmpty()) {
+			cmbGender.addItem(genderDisplay);
 		}
-		cmbGender.setSelectedItem(gender);
+		cmbGender.setSelectedItem(genderDisplay);
 
 		// --- Điện thoại ---
 		txtPhone.setText(rowData[9] != null ? rowData[9].toString() : "");
@@ -369,7 +374,7 @@ public class EmployeeFormPanel extends JPanel {
 		} catch (Exception ex) {
 			emp.setDob(new java.sql.Date(System.currentTimeMillis()));
 		}
-		emp.setRole((String) cmbRole.getSelectedItem());
+		emp.setRole(getRoleCode((String) cmbRole.getSelectedItem()));
 		emp.setEmail(txtEmail.getText().trim());
 		emp.setGender(getGenderCode((String)cmbGender.getSelectedItem()));
 		emp.setPhone(txtPhone.getText().trim());
@@ -443,6 +448,15 @@ public class EmployeeFormPanel extends JPanel {
 			return "nu";
 		}
 		return null;
+	}
+	private String mapGenderDisplay(String genderCode) {
+		if ("nam".equalsIgnoreCase(genderCode)) {
+			return "Male";
+		}
+		if ("nu".equalsIgnoreCase(genderCode)) {
+			return "Female";
+		}
+		return "";
 	}
 
 

@@ -10,6 +10,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -73,6 +75,22 @@ public class RestaurantAdminPanel extends JPanel {
 				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
 				new EmptyBorder(8, 12, 8, 12)
 				));
+		txtSearch.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent e) {
+				if (txtSearch.getText().equals("Search for restaurant name...")) {
+					txtSearch.setText("");
+					txtSearch.setForeground(TEXT_PRIMARY);
+				}
+			}
+			@Override
+			public void focusLost(FocusEvent e) {
+				if (txtSearch.getText().isEmpty()) {
+					txtSearch.setText("Search for restaurant name...");
+					txtSearch.setForeground(Color.GRAY);
+				}
+			}
+		});
 		txtSearch.setOpaque(true);
 
 		var btnSearch = createButton("Search", PRIMARY_BLUE, 110);
@@ -107,7 +125,7 @@ public class RestaurantAdminPanel extends JPanel {
 				"Restaurant ID", "Restaurant Name", "Street","Total Employees","rawId","streetId"
 		};
 		model = new DefaultTableModel(cols, 0);
-		loadRestaurantData("");
+		loadRestaurantData();
 		tableRestaurant = new JTable(model);
 		styleTable(tableRestaurant);
 		setupColumnWidths(tableRestaurant);
@@ -154,9 +172,14 @@ public class RestaurantAdminPanel extends JPanel {
 		add(actionPanel, BorderLayout.SOUTH);
 	}
 
-	private void loadRestaurantData(String value) {
+	private void loadRestaurantData() {
+		var keyword = txtSearch.getText().trim();
+		if (keyword.isEmpty() || "Search for restaurant name...".equals(keyword)) {
+			keyword = "";
+		}
 		try (var conn = DBConnection.getConnection();
-				var stmt = conn.prepareCall("{CALL SP_GetRestaurant}")) {
+				var stmt = conn.prepareCall("{CALL SP_GetRestaurant (?)}")) {
+			stmt.setString(1, keyword);
 			var rs = stmt.executeQuery();
 			model.setRowCount(0);
 
@@ -326,7 +349,7 @@ public class RestaurantAdminPanel extends JPanel {
 		formPanel.setVisible(false);
 		tableCard.setVisible(true);
 		btnAdd.setVisible(true);
-		loadRestaurantData("");
+		loadRestaurantData();
 	}
 
 	private void handleFormCancel(ActionEvent e) {
@@ -344,7 +367,7 @@ public class RestaurantAdminPanel extends JPanel {
 	}
 
 	private void searchRestaurant() {
-		loadRestaurantData(txtSearch.getText().trim());
+		loadRestaurantData();
 
 	}
 
@@ -365,7 +388,7 @@ public class RestaurantAdminPanel extends JPanel {
 				}
 				formPanel.setVisible(false);
 				tableCard.setVisible(true);
-				loadRestaurantData("");
+				loadRestaurantData();
 			}
 		}catch(Exception ex) {
 			JOptionPane.showMessageDialog(this, "Error " + ex.getMessage());

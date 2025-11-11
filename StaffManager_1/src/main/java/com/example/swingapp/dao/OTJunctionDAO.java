@@ -303,16 +303,51 @@ public class OTJunctionDAO implements BaseDAO<OTJunction> {
 		return false;
 	}
 
-	public List<Object[]> getOtConfirmList(String keyword, int restaurantId, int month, int year){
+	public List<Object[]> getOtConfirmList(String keyword, int restaurantId, String date){
 		List<Object[]> list = new ArrayList();
-		var sql = "{CALL SP_GetOtConfirmList (?,?,?,?)}";
+		var sql = "{CALL SP_GetOtConfirmList (?,?,?)}";
 		try(var conn = DBConnection.getConnection();
 				var ps = conn.prepareCall(sql);
 				){
 			ps.setString(1,keyword);
 			ps.setInt(2, restaurantId);
-			ps.setInt(3, month);
-			ps.setInt(4, year);
+			ps.setString(3, date);
+
+			var rs = ps.executeQuery();
+			while(rs.next()) {
+				var item = new Object[15];
+				item[0] = rs.getInt("restaurant_id");
+				item[1] =rs.getString("restaurant_name");
+				item[2] =rs.getInt("employee_id");
+				item[3] =rs.getString("employee_name");
+				item[4] =rs.getString("employee_phone");
+				item[5] =rs.getInt("work_schedule_id");
+				item[6] =rs.getDate("work_date");
+				item[7] =rs.getInt("ot_junction_id");
+				item[8] =rs.getTimestamp("ot_check_in_time");
+				item[9] =rs.getTimestamp("ot_check_out_time");
+				item[10] =rs.getString("ot_confirm");
+				item[11] =rs.getInt("ot_type_id");
+				item[12] =rs.getString("ot_name");
+				item[13] =rs.getTime("ot_start");
+				item[14] =rs.getTime("ot_end");
+				list.add(item);
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
+
+	public List<Object[]> getAllOtConfirmList(String from, String to){
+		List<Object[]> list = new ArrayList();
+		var sql = "{CALL SP_GetAllOtConfirmList (?,?)}";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareCall(sql);
+				){
+			ps.setString(1,from);
+			ps.setString(2, to);
+
 			var rs = ps.executeQuery();
 			while(rs.next()) {
 				var item = new Object[15];

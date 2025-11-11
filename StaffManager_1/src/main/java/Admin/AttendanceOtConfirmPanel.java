@@ -101,12 +101,12 @@ public class AttendanceOtConfirmPanel extends JPanel {
 				BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
 				new EmptyBorder(8, 12, 8, 12)));
 		var now = LocalDate.now();
-		for (var i = 1; i >= 0; i--) {
-			var month = now.minusMonths(i);
-			var item = String.format("%d / %d", month.getMonthValue(), month.getYear());
+		for (var i = -3; i <= 3; i++) {
+			var date = now.plusDays(i);
+			var item = String.format("%d/%d/%d", date.getDayOfMonth(), date.getMonthValue(), date.getYear());
 			cmbMonthYear.addItem(item);
 		}
-		cmbMonthYear.setSelectedIndex(1);
+		cmbMonthYear.setSelectedIndex(3);
 		cmbMonthYear.addActionListener(e -> loadOtConfirmListPanel());
 
 		// Sử dụng styledField (giả định bạn có hàm này, nếu không thì dùng JTextField)
@@ -249,12 +249,17 @@ public class AttendanceOtConfirmPanel extends JPanel {
 	}
 
 	public void loadOtConfirmListPanel() {
-		var monthStr = (String) cmbMonthYear.getSelectedItem();
-		int month = 0, year = 0;
-		if (monthStr != null && monthStr.contains("/")) {
-			var parts = monthStr.replace("Month", "").split("/");
-			month = Integer.parseInt(parts[0].trim());
-			year = Integer.parseInt(parts[1].trim());
+		var dateStr = (String) cmbMonthYear.getSelectedItem();
+		String safeSqlDate;
+		try {
+			var inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
+			var dateObj = LocalDate.parse(dateStr.trim(), inputFormatter);
+			safeSqlDate = dateObj.format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+		} catch (Exception e) {
+			System.err.println("Error parsing selected date: " + dateStr);
+			e.printStackTrace();
+			safeSqlDate = null;
 		}
 
 		var keyword = txtSearch.getText().trim();
@@ -266,7 +271,7 @@ public class AttendanceOtConfirmPanel extends JPanel {
 		if (keyword.isEmpty() || "Search by employee name...".equals(keyword)) {
 			keyword = "";
 		}
-		var otConfirmList = otJunctionService.getOtConfirmList(keyword,restaurantId,month, year);
+		var otConfirmList = otJunctionService.getOtConfirmList(keyword,restaurantId, safeSqlDate);
 		modelOtConfirm.setRowCount(0);
 		var formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		if (otConfirmList.isEmpty()) {

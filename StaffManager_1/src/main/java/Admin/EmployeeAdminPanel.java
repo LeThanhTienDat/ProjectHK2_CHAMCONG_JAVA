@@ -479,9 +479,9 @@ public class EmployeeAdminPanel extends JPanel {
 				Double salary = rs.getObject("salary") == null ? 0.0 : rs.getDouble("salary");
 				row[0] = "NH" + String.format("%03d", rs.getInt("id"));
 				row[1] = rs.getString("name");
-				row[2] = "nam".equals(rs.getString("gender")) ? "Nam" : "Nữ";
+				row[2] = mapGenderDisplay(rs.getString("gender"));
 				row[3] = rs.getObject("dob", java.sql.Date.class);
-				row[4] = rs.getString("role");
+				row[4] = getDisplayRole(rs.getString("role"));
 				row[5] = salary;
 				row[6] = rs.getObject("start_date", java.sql.Date.class);
 				row[7] = rs.getString("contract_status");
@@ -589,9 +589,9 @@ public class EmployeeAdminPanel extends JPanel {
 				var row = new Object[13];
 				row[0] = "NH" + String.format("%03d", rs.getInt("id"));
 				row[1] = rs.getString("name");
-				row[2] = "nam".equalsIgnoreCase(rs.getString("gender")) ? "Nam" : "Nữ";
+				row[2] = mapGenderDisplay(rs.getString("gender"));
 				row[3] = rs.getObject("dob", java.sql.Date.class);
-				row[4] = rs.getString("role");
+				row[4] = getDisplayRole(rs.getString("role"));
 				Double salary = rs.getObject("salary") == null ? 0.0 : rs.getDouble("salary");
 				row[5] = salary;
 				row[6] = rs.getObject("start_date", java.sql.Date.class);
@@ -860,5 +860,45 @@ public class EmployeeAdminPanel extends JPanel {
 		public int getIconHeight() {
 			return size;
 		}
+	}
+
+	public String getDisplayRole(String roleCode) {
+		if (roleCode == null) {
+			return "Employee";
+		}
+		return switch (roleCode.toLowerCase()) {
+		case "giamsat" -> "Supervisor";
+		case "quanly" -> "Manager";
+		default -> "Employee";
+		};
+	}
+
+	public String getRoleCode(String displayName) {
+		if (displayName == null) {
+			return "nhanvien";
+		}
+		return switch (displayName) {
+		case "Supervisor" -> "giamsat";
+		case "Manager" -> "quanly";
+		default -> "nhanvien";
+		};
+	}
+	private String getGenderCode(String display) {
+		if ("Male".equalsIgnoreCase(display)) {
+			return "nam";
+		}
+		if ("Female".equalsIgnoreCase(display)) {
+			return "nu";
+		}
+		return null;
+	}
+	private String mapGenderDisplay(String genderCode) {
+		if ("nam".equalsIgnoreCase(genderCode)) {
+			return "Male";
+		}
+		if ("nu".equalsIgnoreCase(genderCode)) {
+			return "Female";
+		}
+		return "";
 	}
 }

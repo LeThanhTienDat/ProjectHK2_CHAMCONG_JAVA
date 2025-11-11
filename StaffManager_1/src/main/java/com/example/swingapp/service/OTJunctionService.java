@@ -56,7 +56,10 @@ public class OTJunctionService {
 	public boolean rejectOt(int otJunctionId) {
 		return dao.rejectOt(otJunctionId);
 	}
-	public List<Object[]> getOtConfirmList(String keyword, int restaurantId, int month, int year){
-		return dao.getOtConfirmList(keyword, restaurantId, month, year);
+	public List<Object[]> getOtConfirmList(String keyword, int restaurantId, String date){
+		return dao.getOtConfirmList(keyword, restaurantId, date);
+	}
+	public List<Object[]> getAllOtConfirmList(String from, String to){
+		return dao.getAllOtConfirmList(from, to);
 	}
 }

@@ -15,6 +15,7 @@ import java.awt.event.FocusEvent;
 import java.text.MessageFormat;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +36,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import com.example.swingapp.model.Restaurant;
+import com.example.swingapp.service.AttendanceLockStatusService;
 import com.example.swingapp.service.AttendanceService;
 import com.example.swingapp.service.OTJunctionService;
 import com.example.swingapp.service.RestaurantService;
@@ -50,6 +52,9 @@ public class AttendanceAdminPanel extends JPanel {
 	private NotifiedButtonPanel btnApproveWrapper;
 	private final AttendanceService service = new AttendanceService();
 	private final OTJunctionService otJunctionService = new OTJunctionService();
+	private final AttendanceLockStatusService lockService = new AttendanceLockStatusService(); // Giả định có LockService
+	private String lockMonthYear = "";
+
 
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color BG_LIGHT = new Color(250, 251, 255);
@@ -79,6 +84,10 @@ public class AttendanceAdminPanel extends JPanel {
 	public void initData() {
 		if (cmbMonthYear == null) {
 			return;
+		}
+		var lockTime = lockService.getLast();
+		if(lockTime != null) {
+			lockMonthYear = lockTime.getLockedMonth() +" / "+lockTime.getLockedYear();
 		}
 		updateTableHeaderAndData();
 		cmbMonthYear.addActionListener(e -> updateTableHeaderAndData());
@@ -434,6 +443,12 @@ public class AttendanceAdminPanel extends JPanel {
 			@Override
 			public void mouseClicked(java.awt.event.MouseEvent e) {
 				if (e.getClickCount() == 2) {
+					if (isCurrentMonthLocked()) {
+						JOptionPane.showMessageDialog(AttendanceAdminPanel.this,
+								"Cannot modify attendance. The data for this month is **LOCKED**.",
+								"Data Locked", JOptionPane.WARNING_MESSAGE);
+						return;
+					}
 					var row = table.getSelectedRow();
 					var col = table.getSelectedColumn();
 
@@ -499,6 +514,10 @@ public class AttendanceAdminPanel extends JPanel {
 		var cnCheckMissTime = new JLabel("Late/Early leave (Red)");
 		cnCheckMissTime.setForeground(DANGER_RED);
 		legend.add(cnCheckMissTime);
+
+		var cnEmptyCheckIn = new JLabel("New Shift (empty check in) (Pink)");
+		cnEmptyCheckIn.setForeground(new Color(248, 215, 218).darker());
+		legend.add(cnEmptyCheckIn);
 
 		var cnWaiting = new JLabel("Missing attendance (Yellow)");
 		cnWaiting.setForeground(WARNING_ORANGE.brighter());
@@ -573,9 +592,12 @@ public class AttendanceAdminPanel extends JPanel {
 	public JPanel createActionPanel() {
 		var panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 		panel.setBackground(BG_LIGHT);
-
-		var btnPDF = createButton("Export PDF", TEAL, 130);
-		btnPDF.addActionListener(e -> printPDF());
+		var now = java.time.LocalDate.now();
+		var previousMonth = now.minusMonths(1);
+		var getMonth = previousMonth.getMonthValue();
+		var showMonth = returnMonth(getMonth);
+		var btnLockAttendance = createButton("Lock for "+ showMonth, TEAL, 130);
+		btnLockAttendance.addActionListener(e -> handleLockAttendance());
 		var btnDelete = createButton("Delete", DANGER_RED, 130);
 		btnDelete.addActionListener(e -> deleteRow());
 		var btnApprove = createButton("Approve Attendance", SUCCESS_GREEN, 150);
@@ -586,7 +608,7 @@ public class AttendanceAdminPanel extends JPanel {
 		btnLegend.addActionListener(e -> showLegendDialog());
 
 		panel.add(btnDelete);
-		panel.add(btnPDF);
+		panel.add(btnLockAttendance);
 		panel.add(btnApproveWrapper);
 		panel.add(btnLegend);
 		updateApprovalBadgeCount();
@@ -866,26 +888,21 @@ public class AttendanceAdminPanel extends JPanel {
 	}
 	public void updateApprovalBadgeCount() {
 		var count = 0;
-		var monthStr = (String) cmbMonthYear.getSelectedItem();
-		int month = 0, year = 0;
-		if (monthStr != null && monthStr.contains("/")) {
-			var parts = monthStr.replace("Month", "").split("/");
-			month = Integer.parseInt(parts[0].trim());
-			year = Integer.parseInt(parts[1].trim());
+		var dateStr = (String) cmbMonthYear.getSelectedItem();
+		LocalDate selectedDate;
+		try {
+			var inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
+			selectedDate = LocalDate.parse(dateStr.trim(), inputFormatter);
+		} catch (Exception e) {
+			selectedDate = LocalDate.now();
+			System.err.println("Failed to parse date from ComboBox, using current date.");
 		}
+		var safeFromDate = selectedDate.minusDays(3).format(DateTimeFormatter.ISO_LOCAL_DATE);
+		var safeToDate = selectedDate.plusDays(3).format(DateTimeFormatter.ISO_LOCAL_DATE);
 
-		var keyword = txtSearch.getText().trim();
-		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
-		var restaurantId = 0;
-		if (selectedRestaurant != null) {
-			restaurantId = selectedRestaurant.getId();
-		}
-		if (keyword.isEmpty() || "Search by employee name...".equals(keyword)) {
-			keyword = "";
-		}
 		try {
 			// Lấy số lượng bản ghi OT đang chờ duyệt
-			var pendingList = otJunctionService.getOtConfirmList(keyword, restaurantId, month, year);
+			var pendingList = otJunctionService.getAllOtConfirmList( safeFromDate, safeToDate);
 			count = pendingList != null ? pendingList.size() : 0;
 		} catch (Exception e) {
 			System.err.println("Lỗi khi đếm OT chờ duyệt: " + e.getMessage());
@@ -901,4 +918,71 @@ public class AttendanceAdminPanel extends JPanel {
 			}
 		}
 	}
+	public void handleLockAttendance() {
+		var now = java.time.LocalDate.now();
+		var previousMonth = now.minusMonths(1);
+		var showMonth = returnMonth(previousMonth.getMonthValue());
+		var targetMonthYear = String.format("%d / %d", previousMonth.getMonthValue(), previousMonth.getYear());
+		var confirmMsg = "Are you sure you want to LOCK attendance for " + showMonth + " ? All editing functions will be disabled for this month and all preceding months.";
+		if (JOptionPane.showConfirmDialog(this, confirmMsg, "Confirm Lock", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+
+			// Gọi service để khóa tháng mục tiêu
+			lockService.lockMonthYear(previousMonth.getMonthValue(), previousMonth.getYear());
+
+			// Cập nhật biến cờ toàn cục
+			lockMonthYear = targetMonthYear;
+
+			JOptionPane.showMessageDialog(this, "Attendance for " + targetMonthYear + " has been **LOCKED**.", "Success", JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
+	public String  returnMonth(int month) {
+		return switch (month) {
+		case 1 -> "January";
+		case 2 -> "February";
+		case 3 -> "March";
+		case 4 -> "April";
+		case 5 -> "May";
+		case 6 -> "June";
+		case 7 -> "July";
+		case 8 -> "August";
+		case 9 -> "September";
+		case 10 -> "October";
+		case 11 -> "November";
+		case 12 -> "December";
+		default -> "Invalid month";
+		};
+	}
+	private java.time.YearMonth parseMonthYear(String monthYearStr) {
+		if (monthYearStr == null || !monthYearStr.matches("\\d{1,2}\\s/\\s\\d{4}")) {
+			return null;
+		}
+		try {
+			var parts = monthYearStr.split("\\s/\\s");
+			var month = Integer.parseInt(parts[0].trim());
+			var year = Integer.parseInt(parts[1].trim());
+			return java.time.YearMonth.of(year, month);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	private boolean isMonthLocked(String targetMonthYearStr) {
+		if (lockMonthYear == null || lockMonthYear.isEmpty()) {
+			return false;
+		}
+
+		var targetYM = parseMonthYear(targetMonthYearStr);
+		var lockedYM = parseMonthYear(lockMonthYear);
+
+		if (targetYM == null || lockedYM == null) {
+			return false;
+		}
+
+		// Khóa nếu tháng đang xem nhỏ hơn hoặc bằng tháng đã khóa
+		return !targetYM.isAfter(lockedYM);
+	}
+	private boolean isCurrentMonthLocked() {
+		var selected = (String) cmbMonthYear.getSelectedItem();
+		return isMonthLocked(selected);
+	}
+
 }
