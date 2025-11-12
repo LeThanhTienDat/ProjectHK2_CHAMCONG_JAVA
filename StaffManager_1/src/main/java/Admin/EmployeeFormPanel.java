@@ -12,6 +12,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 
 import javax.swing.BorderFactory;
@@ -24,6 +26,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import com.example.swingapp.model.Employee;
+import com.example.swingapp.service.EmployeeService;
 import com.example.swingapp.util.DBConnection;
 
 public class EmployeeFormPanel extends JPanel {
@@ -43,6 +46,7 @@ public class EmployeeFormPanel extends JPanel {
 	private ActionListener saveListener, cancelListener;
 	private boolean isAddMode = true;
 	private int editingEmployeeId = -1;
+	private final EmployeeService employeeService = new EmployeeService();
 
 	private static final Color BORDER_COLOR = new Color(224, 235, 250);
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
@@ -77,6 +81,7 @@ public class EmployeeFormPanel extends JPanel {
 		gbc.gridx = 0; gbc.weightx = 0; // label không giãn
 		form.add(label("Employee ID:"), gbc);
 		txtID = field("Auto", false);
+		txtID.setEnabled(false);
 		gbc.gridx = 1; gbc.weightx = 1.0; // field giãn
 		form.add(txtID, gbc);
 
@@ -115,7 +120,7 @@ public class EmployeeFormPanel extends JPanel {
 
 		gbc.gridx = 0; gbc.weightx = 0;
 		form.add(label("Email:"), gbc);
-		txtEmail = field("0", true);
+		txtEmail = field("", true);
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		form.add(txtEmail, gbc);
 
@@ -144,6 +149,7 @@ public class EmployeeFormPanel extends JPanel {
 		form.add(label("Restaurant:"), gbc);
 		cmbRestaurant = combo(new String[] {});
 		loadRestaurants();
+		cmbRestaurant.setSelectedItem(0);
 		gbc.gridx = 4; gbc.weightx = 1.0;
 		form.add(cmbRestaurant, gbc);
 
@@ -235,39 +241,122 @@ public class EmployeeFormPanel extends JPanel {
 
 	public void clearForm() {
 		txtName.setText("");
-		txtDOB.setText("01/01/1990");
-		txtEmail.setText("0");
+		txtDOB.setText("");
+		txtEmail.setText("");
 		txtPhone.setText("");
 		cmbRole.setSelectedIndex(0);
 		cmbGender.setSelectedIndex(0);
-		cmbRestaurant.setSelectedIndex(-1);
+		cmbRestaurant.setSelectedIndex(0);
 	}
 
 	public void handleSave(ActionEvent e) {
+		var nameText = txtName.getText().trim();
+		if (nameText.isEmpty()) {
+			javax.swing.JOptionPane.showMessageDialog(
+					this,
+					"Name field cannot be empty!",
+					"Input Error",
+					javax.swing.JOptionPane.ERROR_MESSAGE
+					);
+			txtName.requestFocus();
+			return;
+		}
+		var NAME_REGEX = "^[a-zA-Z\\s]+$";
+
+		if (!nameText.matches(NAME_REGEX)) {
+			javax.swing.JOptionPane.showMessageDialog(
+					this,
+					"Invalid name! Name can only contain letters (A-Z, a-z) and spaces.",
+					"Input Error",
+					javax.swing.JOptionPane.ERROR_MESSAGE
+					);
+			txtName.requestFocus();
+			return;
+		}
+
 		var dobText = txtDOB.getText().trim();
 		Date dob = null;
+		String errorMsg = null;
+		var MIN_AGE = 16;
 		try {
-			dob = new SimpleDateFormat("dd/MM/yyyy").parse(dobText);
+			var rawDob = new SimpleDateFormat("dd/MM/yyyy");
+			rawDob.setLenient(false);
+			dob = rawDob.parse(dobText);
 
 			var today = new Date();
 			if (dob.after(today)) {
-				throw new Exception("Date of birth cannot be later than today.");
+				throw new IllegalArgumentException("Date of birth cannot be later than today.");
 			}
+			var dobLocalDate = dob.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			var minAgeDate = LocalDate.now().minusYears(MIN_AGE);
+			if (dobLocalDate.isAfter(minAgeDate)) {
+				throw new IllegalArgumentException("Employee must be at least " + MIN_AGE + " years old.");
+			}
+		} catch (IllegalArgumentException ex) {
+			errorMsg = ex.getMessage();
 		} catch (Exception ex) {
+			errorMsg = "Invalid date of birth! Please enter in dd/MM/yyyy format.";
+		}
+		if (errorMsg != null) {
 			javax.swing.JOptionPane.showMessageDialog(
 					this,
-					"Invalid date of birth! Please enter in dd/MM/yyyy format.",
+					errorMsg,
 					"Input Error",
 					javax.swing.JOptionPane.ERROR_MESSAGE
 					);
 			txtDOB.requestFocus();
 			return;
 		}
+		var emailText = txtEmail.getText().trim();
+		var EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
+		if (emailText.isEmpty()) {
+			javax.swing.JOptionPane.showMessageDialog(
+					this,
+					"Email field cannot be empty!",
+					"Input Error",
+					javax.swing.JOptionPane.ERROR_MESSAGE
+					);
+			txtEmail.requestFocus();
+			return;
+		}
+
+		if (!emailText.matches(EMAIL_REGEX)) {
+			javax.swing.JOptionPane.showMessageDialog(
+					this,
+					"Invalid email format! Please enter a valid email address.",
+					"Input Error",
+					javax.swing.JOptionPane.ERROR_MESSAGE
+					);
+			txtEmail.requestFocus();
+			return;
+		}
+		var phoneText = txtPhone.getText();
+		if (!phoneText.matches("^[0-9]{9,11}$")) {
+			javax.swing.JOptionPane.showMessageDialog(
+					this,
+					"Invalid phone number! Please enter 9-11 digits only.",
+					"Input Error",
+					javax.swing.JOptionPane.ERROR_MESSAGE
+					);
+			txtPhone.requestFocus();
+			return;
+		}
+		var checkPhone = employeeService.checkExistPhone(phoneText);
+		if (checkPhone) {
+			javax.swing.JOptionPane.showMessageDialog(
+					this,
+					"This phone number already exists, please try another one!",
+					"Input Error",
+					javax.swing.JOptionPane.ERROR_MESSAGE
+					);
+			txtPhone.requestFocus();
+			return;
+		}
 		var emp = new Employee();
-		emp.setName(txtName.getText());
-		emp.setPhone(txtPhone.getText());
-		try { emp.setDob(new SimpleDateFormat("dd/MM/yyyy").parse(txtDOB.getText())); }
-		catch(Exception ex) { emp.setDob(new Date()); }
+		emp.setName(nameText);
+		emp.setPhone(phoneText);
+		emp.setDob(dob);
+		emp.setEmail(emailText);
 		emp.setRole(getRoleCode((String)cmbRole.getSelectedItem()));
 		emp.setGender(getGenderCode((String)cmbGender.getSelectedItem()));
 

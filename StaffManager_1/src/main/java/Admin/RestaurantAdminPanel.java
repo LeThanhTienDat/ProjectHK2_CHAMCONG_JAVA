@@ -167,8 +167,8 @@ public class RestaurantAdminPanel extends JPanel {
 		btnPDF.addActionListener(e -> printPDF());
 
 		actionPanel.add(btnDelete);
-		actionPanel.add(btnManager);
-		actionPanel.add(btnPDF);
+		//		actionPanel.add(btnManager);
+		//		actionPanel.add(btnPDF);
 		add(actionPanel, BorderLayout.SOUTH);
 	}
 

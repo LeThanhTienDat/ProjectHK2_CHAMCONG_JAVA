@@ -142,7 +142,7 @@ public class ShiftAdminPanel extends JPanel {
 		btnPDF.addActionListener(e -> printPDF());
 
 		actionsPanel.add(btnDelete);
-		actionsPanel.add(btnPDF);
+		//		actionsPanel.add(btnPDF);
 		add(actionsPanel, BorderLayout.SOUTH);
 	}
 

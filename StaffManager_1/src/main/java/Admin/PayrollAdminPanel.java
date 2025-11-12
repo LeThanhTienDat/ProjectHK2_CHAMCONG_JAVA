@@ -29,6 +29,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import com.example.swingapp.model.Restaurant;
+import com.example.swingapp.service.MonthlySummaryService;
 import com.example.swingapp.service.RestaurantService;
 import com.example.swingapp.util.DBConnection;
 
@@ -42,6 +43,7 @@ public class PayrollAdminPanel extends JPanel {
 	private JComboBox<Restaurant> resFilter;
 	private JComboBox<String> monthFilter;
 	private boolean isInitializing = true;
+	private final MonthlySummaryService summaryService = new MonthlySummaryService();
 
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color ACCENT_BLUE = new Color(33, 150, 243);
@@ -136,8 +138,12 @@ public class PayrollAdminPanel extends JPanel {
 		if (!java.beans.Beans.isDesignTime()) {
 			btnPDF.addActionListener(e -> printPDF());
 		}
-		actions.add(btnDelete);
-		actions.add(btnPDF);
+		var btnRefresh = createButton("Refresh Data", TEAL, 110);
+		if (!java.beans.Beans.isDesignTime()) {
+			btnRefresh.addActionListener(e -> refreshData());
+		}
+		//		actions.add(btnDelete);
+		actions.add(btnRefresh);
 		add(actions, BorderLayout.SOUTH);
 	}
 
@@ -523,6 +529,21 @@ public class PayrollAdminPanel extends JPanel {
 			} catch (Exception ex) {
 				JOptionPane.showMessageDialog(this, "Lỗi xuất PDF: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
 			}
+		}
+	}
+	private void refreshData() {
+		var monthStr = (String) monthFilter.getSelectedItem();
+		int month = 0, year = 0;
+		if (monthStr != null && monthStr.contains("/")) {
+			var parts = monthStr.replace("Month", "").split("/");
+			month = Integer.parseInt(parts[0].trim());
+			year = Integer.parseInt(parts[1].trim());
+		}
+		var refreshAction = summaryService.reFresh(month, year);
+		if(refreshAction) {
+			JOptionPane.showMessageDialog(this, "Data has been updated.", "Success", JOptionPane.INFORMATION_MESSAGE);
+		}else {
+			JOptionPane.showMessageDialog(this, "Update Data failed!", "Failed", JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
 

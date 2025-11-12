@@ -71,7 +71,7 @@ public class OvertimeAdminPanel extends JPanel {
 		var btnPDF = createButton("Export PDF", TEAL, 110);
 		btnPDF.addActionListener(e -> printPDF());
 		actions.add(btnDelete);
-		actions.add(btnPDF);
+		//		actions.add(btnPDF);
 		add(actions, BorderLayout.SOUTH);
 	}
 

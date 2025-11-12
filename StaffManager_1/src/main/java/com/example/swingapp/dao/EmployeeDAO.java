@@ -57,7 +57,11 @@ public class EmployeeDAO implements BaseDAO<Employee> {
 
 	@Override
 	public boolean delete(int id) {
-		var sql = "DELETE FROM tbl_employee WHERE id=?";
+		var sql = """
+					Update tbl_Employee
+					set active = 0
+					where id = ?
+				""";
 		try (var conn = DBConnection.getConnection();
 				var ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, id);
@@ -166,5 +170,46 @@ public class EmployeeDAO implements BaseDAO<Employee> {
 			e.printStackTrace();
 		}
 		return 0;
+	}
+	public boolean checkPhone(String phone) {
+		var sql = """
+				select 1
+				            from tbl_Employee e
+				            where e.phone = ?
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)){
+			ps.setString(1,phone);
+			var rs = ps.executeQuery();
+			while(rs.next()) {
+				return true;
+			}
+		}catch(Exception e) {
+			System.err.println("Database error occurred while checking phone: " + e.getMessage());
+			e.printStackTrace();
+		}
+		return false;
+	}
+	public boolean hasActiveContract(int employeeId) {
+		var sql = """
+					select top 1 1
+					from tbl_Employee e
+					join tbl_Contract c on c.employee_id = e.id
+					where e.id = ? and c.status = 'Active'
+				""";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)){
+			ps.setInt(1,employeeId);
+			var rs = ps.executeQuery();
+			while(rs.next()) {
+				return true;
+			}
+		}catch(Exception e) {
+			System.err.println("Database error occurred while checking phone: " + e.getMessage());
+			e.printStackTrace();
+		}
+
+
+		return false;
 	}
 }

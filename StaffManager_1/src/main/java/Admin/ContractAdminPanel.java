@@ -49,8 +49,10 @@ public class ContractAdminPanel extends JPanel {
 	private JComboBox<Restaurant> resFilter;
 	private JComboBox<ComboItem> expiringContracts;
 	private boolean isInitializing = true;
-	private int totalEmployees = 0;
-	private int totalNotContract = 0;
+	private int totalContracts = 0;
+	private int totalExpiringContracts = 0;
+	private JLabel lblTotalContracts;
+	private JLabel lblTotalExpiringContracts;
 	private JPanel currentLegendPanel;
 	private JPanel tableCard;
 
@@ -203,7 +205,7 @@ public class ContractAdminPanel extends JPanel {
 
 		var btnPDF = createButton("Xuất PDF", TEAL, 110);
 		btnPDF.addActionListener(e -> printPDF());
-		actions.add(btnPDF);
+		//		actions.add(btnPDF);
 	}
 
 	private JPanel createTableCard() {
@@ -432,6 +434,7 @@ public class ContractAdminPanel extends JPanel {
 	}
 
 	private void loadContractTable() {
+
 		var keyword = txtSearch.getText().trim();
 		var selectedRestaurant = (Restaurant) resFilter.getSelectedItem();
 		var restaurantId = 0;
@@ -456,8 +459,9 @@ public class ContractAdminPanel extends JPanel {
 			stmt.setInt(3, flagInt);
 			var rs = stmt.executeQuery();
 			model.setRowCount(0);
-
+			var currentTotalContracts = 0;
 			while (rs.next()) {
+				currentTotalContracts  ++;
 				var row = new Object[8];
 				row[0] = "HD" + String.format("%03d", rs.getInt("contract_id"));
 				row[1] = rs.getString("employee_name");
@@ -469,6 +473,9 @@ public class ContractAdminPanel extends JPanel {
 				row[7] = rs.getString("restaurant_name");
 				model.addRow(row);
 			}
+
+			lblTotalContracts.setText(String.valueOf(currentTotalContracts));
+
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -571,49 +578,39 @@ public class ContractAdminPanel extends JPanel {
 		legend.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(BORDER_COLOR, 1),
 				new EmptyBorder(10, 0, 10, 0)));
-		var viewTotalEmployees = String.valueOf(totalEmployees);
-		var viewTotalNotContract = String.valueOf(totalNotContract);
-		String[][] legends = {
-				{"Total Employees: ", viewTotalEmployees }
+		var lblTotalTitle = new JLabel("Total Contracts: ");
+		lblTotalTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		lblTotalTitle.setForeground(PRIMARY_BLUE);
+		lblTotalTitle.setPreferredSize(new Dimension(100, 20));
+		lblTotalContracts = new JLabel(String.valueOf(totalContracts));
+		lblTotalContracts.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		lblTotalContracts.setForeground(TEXT_PRIMARY);
+		var itemTotal = new JPanel(new BorderLayout(5, 0));
+		itemTotal.setOpaque(false);
+		itemTotal.add(lblTotalTitle, BorderLayout.WEST);
+		itemTotal.add(lblTotalContracts, BorderLayout.CENTER); // Thêm JLabel đã gán
+		legend.add(itemTotal);
 
-		};
+		//		var lblExpiringTitle = new JLabel("Total Expiring Contracts: ");
+		//		lblExpiringTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		//		lblExpiringTitle.setForeground(PRIMARY_BLUE);
+		//		lblExpiringTitle.setPreferredSize(new Dimension(170, 20));
+		//
+		//		// ✅ GÁN ĐỐI TƯỢNG JLabel MỚI cho biến thành viên lblTotalExpiringContracts
+		//		lblTotalExpiringContracts = new JLabel(String.valueOf(totalExpiringContracts));
+		//		lblTotalExpiringContracts.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		//		lblTotalExpiringContracts.setForeground(TEXT_PRIMARY);
+		//
+		//		var itemExpiring = new JPanel(new BorderLayout(5, 0));
+		//		itemExpiring.setOpaque(false);
+		//		itemExpiring.add(lblExpiringTitle, BorderLayout.WEST);
+		//		itemExpiring.add(lblTotalExpiringContracts, BorderLayout.CENTER); // Thêm JLabel đã gán
+		//		legend.add(itemExpiring);
 
-		for (String[] lg : legends) {
-			var icon = new JLabel(lg[0]);
-			icon.setFont(new Font("Segoe UI", Font.BOLD, 12));
-			icon.setForeground(PRIMARY_BLUE);
-			icon.setPreferredSize(new Dimension(100, 20));
-			icon.setToolTipText(lg[1]);
-
-			var desc = new JLabel(lg[1]);
-			desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-			desc.setForeground(TEXT_PRIMARY);
-
-			var item = new JPanel(new BorderLayout(5, 0));
-			item.add(icon, BorderLayout.WEST);
-			item.add(desc, BorderLayout.CENTER);
-			legend.add(item);
-		}
-
-		var totalNotContract = new JLabel();
-		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		totalNotContract.setForeground(PRIMARY_BLUE);
-		totalNotContract.setPreferredSize(new Dimension(170, 20));
-		totalNotContract.setText("No contract / Expired: ");
-
-		var desc = new JLabel();
-		desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-		desc.setForeground(TEXT_PRIMARY);
-		desc.setText(viewTotalNotContract);
-
-		var item = new JPanel(new BorderLayout(5, 0));
-		item.add(totalNotContract, BorderLayout.WEST);
-		item.add(desc, BorderLayout.CENTER);
-		legend.add(item);
-		var summaryLegend = new JLabel("Note: ");
-		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		summaryLegend.setForeground(PRIMARY_BLUE);
-		legend.add(summaryLegend);
+		//		var summaryLegend = new JLabel("Note: ");
+		//		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		//		summaryLegend.setForeground(PRIMARY_BLUE);
+		//		legend.add(summaryLegend);
 
 
 		return legend;

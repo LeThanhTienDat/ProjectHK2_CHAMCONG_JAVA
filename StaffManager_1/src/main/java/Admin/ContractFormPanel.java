@@ -11,6 +11,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -123,8 +124,8 @@ public class ContractFormPanel extends JPanel {
 		addField(card, gc, 0, "Restaurant Name", cmbRestaurant);
 		addField(card, gc, 1, "Employee Name",cmbEmployee);
 		addField(card, gc, 2, "Position", cmbPosition);
-		addField(card, gc, 3, "Start Date (yyyy-MM-dd)", txtStart);
-		addField(card, gc, 4, "End Date (yyyy-MM-dd)", txtEnd);
+		addField(card, gc, 3, "Start Date (dd/MM/yyyy)", txtStart);
+		addField(card, gc, 4, "End Date (dd/MM/yyyy)", txtEnd);
 		addField(card, gc, 5, "Basic Salary", txtSalary);
 		addField(card, gc, 6, "Contract Status", cmbStatus);
 
@@ -271,25 +272,73 @@ public class ContractFormPanel extends JPanel {
 	}
 
 	public Object[] getFormData() {
-		System.out.println("[DEBUG] Salary text = " + txtSalary.getText().trim());
+		var selectedRestaurant = (Restaurant) cmbRestaurant.getSelectedItem();
+		if (selectedRestaurant == null) {
+			JOptionPane.showMessageDialog(this, "Please select an Restaurant!", "Error", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
 		var selectedEmployee = (Employee) cmbEmployee.getSelectedItem();
 		if (selectedEmployee == null) {
 			JOptionPane.showMessageDialog(this, "Please select an employee!", "Error", JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
+		var rawStartTimeText = txtStart.getText().trim();
+		var rawEndTimeText = txtEnd.getText().trim();
+		var salaryTextRaw = txtSalary.getText().trim();
+		var salaryText = salaryTextRaw.replace(",", "").replace(" ", "");
+		if (rawStartTimeText.isEmpty() || rawEndTimeText.isEmpty() || salaryTextRaw.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Date and Salary fields cannot be empty!", "Input Error", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
+		java.util.Date startDateUtil = null;
+		java.util.Date endDateUtil = null;
+		java.sql.Date startDateSql = null;
+		java.sql.Date endDateSql = null;
+		var DATE_FORMAT = "dd/MM/yyyy";
+		var rawDate = new SimpleDateFormat(DATE_FORMAT);
+		rawDate.setLenient(false);
+		try {
+			// Kiểm tra định dạng và tính hợp lệ của ngày tháng (ví dụ: 30/02/2025)
+			startDateUtil = rawDate.parse(rawStartTimeText);
+			endDateUtil = rawDate.parse(rawEndTimeText);
+
+			// Kiểm tra Ngày kết thúc sau Ngày bắt đầu
+			if (endDateUtil.before(startDateUtil)) {
+				JOptionPane.showMessageDialog(this, "End Date cannot be before Start Date!", "Input Error", JOptionPane.ERROR_MESSAGE);
+				txtEnd.requestFocusInWindow();
+				return null;
+			}
+
+			startDateSql = new java.sql.Date(startDateUtil.getTime());
+			endDateSql = new java.sql.Date(endDateUtil.getTime());
+
+		} catch (java.text.ParseException ex) {
+			JOptionPane.showMessageDialog(this,
+					"Invalid date format! Please enter date in " + DATE_FORMAT + " format.",
+					"Input Error", JOptionPane.ERROR_MESSAGE);
+			txtStart.requestFocusInWindow();
+			return null;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(this, "An unexpected error occurred during date validation: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
+
 
 		try {
-			var salaryText = txtSalary.getText().trim().replace(",", "");
-			var startDate = java.sql.Date.valueOf(txtStart.getText().trim());
-			var endDate = java.sql.Date.valueOf(txtEnd.getText().trim());
 			var salary = Double.parseDouble(salaryText);
+			if (salary <= 0) {
+				JOptionPane.showMessageDialog(this, "Salary must be a positive number!", "Input Error", JOptionPane.ERROR_MESSAGE);
+				txtSalary.requestFocusInWindow();
+				return null;
+			}
 			var position = mapRoleCode((String) cmbPosition.getSelectedItem());
 
 			return new Object[] {
 					null,
 					selectedEmployee.getId(),
-					startDate,
-					endDate,
+					startDateSql,
+					endDateSql,
 					salary,
 					position,
 					cmbStatus.getSelectedItem().toString(),
@@ -298,7 +347,7 @@ public class ContractFormPanel extends JPanel {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this,
-					"Please enter the correct date format (yyyy-MM-dd) and salary as a number!",
+					"Please enter the correct date format (dd/MM/yyyy) and salary as a number!",
 					"Data Error", JOptionPane.ERROR_MESSAGE);
 			return null;
 		}

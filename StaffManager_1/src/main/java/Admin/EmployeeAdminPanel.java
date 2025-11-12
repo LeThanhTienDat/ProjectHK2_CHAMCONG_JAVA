@@ -33,6 +33,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import com.example.swingapp.model.Restaurant;
+import com.example.swingapp.service.EmployeeService;
 import com.example.swingapp.service.RestaurantService;
 import com.example.swingapp.util.DBConnection;
 
@@ -51,6 +52,7 @@ public class EmployeeAdminPanel extends JPanel {
 	private JPanel currentLegendPanel;
 	private int totalEmployees = 0;
 	private int totalNotContract = 0;
+	private final EmployeeService employeeService = new EmployeeService();
 	// Colors
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color ACCENT_BLUE = new Color(33, 150, 243);
@@ -258,8 +260,8 @@ public class EmployeeAdminPanel extends JPanel {
 		btnPDF.addActionListener(e -> printPDF());
 
 		actionPanel.add(btnDelete);
-		actionPanel.add(btnContract);
-		actionPanel.add(btnPDF);
+		//		actionPanel.add(btnContract);
+		//		actionPanel.add(btnPDF);
 
 		add(actionPanel, BorderLayout.SOUTH);
 	}
@@ -622,15 +624,29 @@ public class EmployeeAdminPanel extends JPanel {
 			JOptionPane.showMessageDialog(this, "Please select an employee to delete!");
 			return;
 		}
+		var id = (int) model.getValueAt(row, 12);
+		var checkContract = employeeService.checkActiveContract(id);
+		if(checkContract) {
+			JOptionPane.showMessageDialog(this, "Can't delete employee: Active contract found.");
+			return;
+		}
 		if (JOptionPane.showConfirmDialog(this, "Delete this employee?", "Confirm",
 				JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-			var id = (int) model.getValueAt(row, 10);
+
+			var sql = """
+						Update tbl_Employee
+						set active = 0
+						where id = ?
+					""";
 			try (var conn = DBConnection.getConnection();
-					var pst = conn.prepareStatement("DELETE FROM tbl_Employee WHERE id=?")) {
+					var pst = conn.prepareStatement(sql)) {
 				pst.setInt(1, id);
-				pst.executeUpdate();
-				JOptionPane.showMessageDialog(this, "Employee deleted successfully!");
-				reloadTable();
+				var rs = pst.executeUpdate();
+				if(rs > 0) {
+					JOptionPane.showMessageDialog(this, "Employee deleted successfully!");
+					handleFormCancel(null);
+					reloadTable();
+				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				JOptionPane.showMessageDialog(this, "Error deleting record: " + ex.getMessage());
@@ -733,7 +749,7 @@ public class EmployeeAdminPanel extends JPanel {
 			for (Restaurant r : restaurants) {
 				resFilter.addItem(r);
 			}
-			resFilter.setSelectedIndex(-1);
+			resFilter.setSelectedIndex(0);
 			isInitializing = false;
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -793,27 +809,27 @@ public class EmployeeAdminPanel extends JPanel {
 			legend.add(item);
 		}
 
-		var totalNotContract = new JLabel();
-		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		totalNotContract.setForeground(PRIMARY_BLUE);
-		totalNotContract.setPreferredSize(new Dimension(170, 20));
-		totalNotContract.setText("No Contract / Expired: ");
+		//		var totalNotContract = new JLabel();
+		//		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		//		totalNotContract.setForeground(PRIMARY_BLUE);
+		//		totalNotContract.setPreferredSize(new Dimension(170, 20));
+		//		totalNotContract.setText("No Contract / Expired: ");
 
 		var desc = new JLabel();
 		desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
 		desc.setForeground(TEXT_PRIMARY);
 		desc.setText(viewTotalNotContract);
 
-		var item = new JPanel(new BorderLayout(5, 0));
-		item.add(totalNotContract, BorderLayout.WEST);
-		item.add(desc, BorderLayout.CENTER);
-		legend.add(item);
+		//		var item = new JPanel(new BorderLayout(5, 0));
+		//		item.add(totalNotContract, BorderLayout.WEST);
+		//		item.add(desc, BorderLayout.CENTER);
+		//		legend.add(item);
 		var summaryLegend = new JLabel("Legend: ");
 		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		summaryLegend.setForeground(PRIMARY_BLUE);
 		legend.add(summaryLegend);
 
-		var redNote = new JLabel("Contract Expired:", new ColorSquareIcon(DANGER_RED.brighter().brighter()), SwingConstants.LEFT);
+		var redNote = new JLabel("Contract Expired", new ColorSquareIcon(DANGER_RED.brighter().brighter()), SwingConstants.LEFT);
 		redNote.setFont(new Font("Segoe UI", Font.PLAIN, 11));
 		redNote.setForeground(TEXT_PRIMARY);
 		legend.add(redNote);

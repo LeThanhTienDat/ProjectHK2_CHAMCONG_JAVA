@@ -54,6 +54,7 @@ public class AttendanceAdminPanel extends JPanel {
 	private final OTJunctionService otJunctionService = new OTJunctionService();
 	private final AttendanceLockStatusService lockService = new AttendanceLockStatusService(); // Giả định có LockService
 	private String lockMonthYear = "";
+	private JButton btnLockAttendance, btnSearch, btnDelete;
 
 
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
@@ -91,6 +92,7 @@ public class AttendanceAdminPanel extends JPanel {
 		}
 		updateTableHeaderAndData();
 		cmbMonthYear.addActionListener(e -> updateTableHeaderAndData());
+		updateLockButtonState();
 	}
 
 	public JPanel createSearchPanel() {
@@ -142,7 +144,7 @@ public class AttendanceAdminPanel extends JPanel {
 			}
 		});
 
-		var btnSearch = createButton("Search", PRIMARY_BLUE, 120);
+		btnSearch = createButton("Search", PRIMARY_BLUE, 120);
 		btnSearch.addActionListener(e -> updateTableHeaderAndData());
 
 		resFilter = new JComboBox<Restaurant>();
@@ -164,6 +166,7 @@ public class AttendanceAdminPanel extends JPanel {
 	}
 
 	public void updateTableHeaderAndData() {
+		updateLockButtonState();
 		var monthStr = (String) cmbMonthYear.getSelectedItem();
 		int month = 0, year = 0;
 		if (monthStr != null && monthStr.contains("/")) {
@@ -445,7 +448,7 @@ public class AttendanceAdminPanel extends JPanel {
 				if (e.getClickCount() == 2) {
 					if (isCurrentMonthLocked()) {
 						JOptionPane.showMessageDialog(AttendanceAdminPanel.this,
-								"Cannot modify attendance. The data for this month is **LOCKED**.",
+								"Cannot modify attendance. The data for this month is LOCKED.",
 								"Data Locked", JOptionPane.WARNING_MESSAGE);
 						return;
 					}
@@ -596,9 +599,9 @@ public class AttendanceAdminPanel extends JPanel {
 		var previousMonth = now.minusMonths(1);
 		var getMonth = previousMonth.getMonthValue();
 		var showMonth = returnMonth(getMonth);
-		var btnLockAttendance = createButton("Lock for "+ showMonth, TEAL, 130);
+		btnLockAttendance = createButton("Lock Attendance", TEAL, 130);
 		btnLockAttendance.addActionListener(e -> handleLockAttendance());
-		var btnDelete = createButton("Delete", DANGER_RED, 130);
+		btnDelete = createButton("Delete", DANGER_RED, 130);
 		btnDelete.addActionListener(e -> deleteRow());
 		var btnApprove = createButton("Approve Attendance", SUCCESS_GREEN, 150);
 		btnApprove.addActionListener(e -> openOtConfirmForm());
@@ -627,6 +630,9 @@ public class AttendanceAdminPanel extends JPanel {
 					fillColor = bg.darker();
 				} else if (getModel().isRollover()) {
 					fillColor = bg.brighter();
+				}
+				if (!isEnabled()) {
+					fillColor = new Color(170, 170, 170); // Màu xám nhạt
 				}
 				g2.setColor(fillColor);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
@@ -932,7 +938,7 @@ public class AttendanceAdminPanel extends JPanel {
 			// Cập nhật biến cờ toàn cục
 			lockMonthYear = targetMonthYear;
 
-			JOptionPane.showMessageDialog(this, "Attendance for " + targetMonthYear + " has been **LOCKED**.", "Success", JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Attendance for " + targetMonthYear + " has been LOCKED.", "Success", JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
 	public String  returnMonth(int month) {
@@ -984,5 +990,16 @@ public class AttendanceAdminPanel extends JPanel {
 		var selected = (String) cmbMonthYear.getSelectedItem();
 		return isMonthLocked(selected);
 	}
+	private void updateLockButtonState() {
+		if (btnLockAttendance == null || cmbMonthYear == null) {
+			return;
+		}
 
+		var selectedMonthYear = (String) cmbMonthYear.getSelectedItem();
+		var now = LocalDate.now();
+		var previousMonth = now.minusMonths(1);
+		var targetMonthYear = String.format("%d / %d", previousMonth.getMonthValue(), previousMonth.getYear());
+		var shouldBeEnabled = targetMonthYear.equals(selectedMonthYear);
+		btnLockAttendance.setEnabled(shouldBeEnabled);
+	}
 }

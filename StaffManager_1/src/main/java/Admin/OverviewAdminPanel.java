@@ -52,6 +52,7 @@ public class OverviewAdminPanel extends JPanel {
 	private boolean isInitializing = true;
 	private String showDate;
 	private JLabel headerLabel;
+	private JLabel showTotalCheckIn;
 
 	private static final Color PRIMARY_BLUE = new Color(25, 118, 210);
 	private static final Color BG_LIGHT = new Color(250, 251, 255);
@@ -371,7 +372,9 @@ public class OverviewAdminPanel extends JPanel {
 			ps.setDate(3, sqlDate);
 			var rs=ps.executeQuery();
 			attendanceModel.setRowCount(0);
+			var countTotalCheckIn = 0;
 			while (rs.next()) {
+				countTotalCheckIn ++;
 				var row = new Object[8];
 				row[0] = "NV" + String.format("%03d", rs.getInt("employee_id"));
 				row[1] = rs.getString("employee_name");
@@ -383,6 +386,7 @@ public class OverviewAdminPanel extends JPanel {
 				row[7] = rs.getString("status_flag");
 				attendanceModel.addRow(row);
 			}
+			showTotalCheckIn.setText(String.valueOf(countTotalCheckIn));
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -394,44 +398,22 @@ public class OverviewAdminPanel extends JPanel {
 		legend.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(BORDER_COLOR, 1),
 				new EmptyBorder(10, 0, 10, 0)));
-		var viewTotalEmployees = String.valueOf(totalEmployees);
-		var viewTotalNotContract = String.valueOf(totalNotContract);
-		String[][] legends = {
-				{"Total employees: ", viewTotalEmployees }
 
-		};
-
-		for (String[] lg : legends) {
-			var icon = new JLabel(lg[0]);
-			icon.setFont(new Font("Segoe UI", Font.BOLD, 12));
-			icon.setForeground(PRIMARY_BLUE);
-			icon.setPreferredSize(new Dimension(100, 20));
-			icon.setToolTipText(lg[1]);
-
-			var desc = new JLabel(lg[1]);
-			desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-			desc.setForeground(TEXT_PRIMARY);
-
-			var item = new JPanel(new BorderLayout(5, 0));
-			item.add(icon, BorderLayout.WEST);
-			item.add(desc, BorderLayout.CENTER);
-			legend.add(item);
-		}
 
 		var totalNotContract = new JLabel();
 		totalNotContract.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		totalNotContract.setForeground(PRIMARY_BLUE);
 		totalNotContract.setPreferredSize(new Dimension(170, 20));
-		totalNotContract.setText("No contract / Expired: ");
+		totalNotContract.setText("Total Check in: ");
 
-		var desc = new JLabel();
-		desc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-		desc.setForeground(TEXT_PRIMARY);
-		desc.setText(viewTotalNotContract);
+		showTotalCheckIn = new JLabel();
+		showTotalCheckIn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		showTotalCheckIn.setForeground(TEXT_PRIMARY);
+		showTotalCheckIn.setText("");
 
 		var item = new JPanel(new BorderLayout(5, 0));
 		item.add(totalNotContract, BorderLayout.WEST);
-		item.add(desc, BorderLayout.CENTER);
+		item.add(showTotalCheckIn, BorderLayout.CENTER);
 		legend.add(item);
 		var summaryLegend = new JLabel("Legend: ");
 		summaryLegend.setFont(new Font("Segoe UI", Font.BOLD, 12));

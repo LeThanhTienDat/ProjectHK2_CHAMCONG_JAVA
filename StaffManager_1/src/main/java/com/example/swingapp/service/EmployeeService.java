@@ -26,4 +26,10 @@ public class EmployeeService {
 	public List<Employee> getByRestaurantId(int id){
 		return dao.getByRestaurantId(id);
 	}
+	public boolean checkExistPhone(String phone) {
+		return dao.checkPhone(phone);
+	}
+	public boolean checkActiveContract(int employeeId) {
+		return dao.hasActiveContract(employeeId);
+	}
 }

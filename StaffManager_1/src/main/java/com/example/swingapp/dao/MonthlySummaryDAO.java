@@ -1,10 +1,6 @@
 package com.example.swingapp.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,15 +11,16 @@ public class MonthlySummaryDAO implements BaseDAO<MonthlySummary> {
 
 	@Override
 	public boolean insert(MonthlySummary m) {
-		String sql =
-				"INSERT INTO tbl_monthly_summary(" +
-						"employee_id, total_shift, bonus, final_salary, status, " +
-						"month, year, total_come_late, total_early_leave, " +
-						"total_over_time, total_work_time, al_used, " +
-						"total_work_salary, total_ot_salary) " +
-						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-		try (Connection conn = DBConnection.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql)) {
+		var sql =
+				"""
+				INSERT INTO tbl_monthly_summary(\
+				employee_id, total_shift, bonus, final_salary, status, \
+				month, year, total_come_late, total_early_leave, \
+				total_over_time, total_work_time, al_used, \
+				total_work_salary, total_ot_salary) \
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, m.getEmployeeId());
 			ps.setInt(2, m.getTotalShift());
@@ -49,9 +46,9 @@ public class MonthlySummaryDAO implements BaseDAO<MonthlySummary> {
 
 	@Override
 	public boolean update(MonthlySummary m) {
-		String sql = "UPDATE tbl_monthly_summary SET final_salary=?, status=? WHERE id=?";
-		try (Connection conn = DBConnection.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql)) {
+		var sql = "UPDATE tbl_monthly_summary SET final_salary=?, status=? WHERE id=?";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
 			ps.setDouble(1, m.getFinalSalary());
 			ps.setString(2, m.getStatus());
 			ps.setInt(3, m.getId());
@@ -64,9 +61,9 @@ public class MonthlySummaryDAO implements BaseDAO<MonthlySummary> {
 
 	@Override
 	public boolean delete(int id) {
-		String sql = "DELETE FROM tbl_monthly_summary WHERE id=?";
-		try (Connection conn = DBConnection.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql)) {
+		var sql = "DELETE FROM tbl_monthly_summary WHERE id=?";
+		try (var conn = DBConnection.getConnection();
+				var ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, id);
 			return ps.executeUpdate() > 0;
 		} catch (SQLException e) {
@@ -78,10 +75,10 @@ public class MonthlySummaryDAO implements BaseDAO<MonthlySummary> {
 	@Override
 	public List<MonthlySummary> getAll() {
 		List<MonthlySummary> list = new ArrayList<>();
-		String sql = "SELECT * FROM tbl_monthly_summary";
-		try (Connection conn = DBConnection.getConnection();
-				Statement st = conn.createStatement();
-				ResultSet rs = st.executeQuery(sql)) {
+		var sql = "SELECT * FROM tbl_monthly_summary";
+		try (var conn = DBConnection.getConnection();
+				var st = conn.createStatement();
+				var rs = st.executeQuery(sql)) {
 			while (rs.next()) {
 				list.add(new MonthlySummary(
 						rs.getInt("id"),
@@ -105,5 +102,18 @@ public class MonthlySummaryDAO implements BaseDAO<MonthlySummary> {
 			e.printStackTrace();
 		}
 		return list;
+	}
+	public boolean reFreshMonthlySummary(int month, int year) {
+		var sql = "{CALL SP_Cal_Monthly_Sumary (?,?)}";
+		try(var conn = DBConnection.getConnection();
+				var ps = conn.prepareCall(sql)){
+			ps.setInt(1, month);
+			ps.setInt(2, year);
+			ps.execute();
+			return true;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 }
